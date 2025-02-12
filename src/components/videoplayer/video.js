@@ -97,6 +97,7 @@ const VideoPlayer = () => {
       videoRef.current.load();
       videoRef.current.play().catch((error) => {
         console.error('Video play failed:', error);
+        alert('Failed to play the video. Please check the video URL or try again later.');
       });
     }
   }, [videoUrl]);

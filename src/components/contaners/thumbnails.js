@@ -135,7 +135,8 @@ const VideoCarousel = ({ videos, trackRef }) => {
                 '&:hover': { transform: 'scale(1.05)' },
               }}
             >
-              <a href={`/video?video=${encodeURIComponent(video.videoUrl)}&title=${encodeURIComponent(video.title)}&description=${encodeURIComponent(video.description)}`}>
+                <a href={`/video?video=${encodeURIComponent(video.videoUrl)}&title=${encodeURIComponent(video.title)}&description=${encodeURIComponent(video.description)}`} onClick={(e) => { if (!video.videoUrl) { e.preventDefault(); alert('Video URL is missing or invalid.'); } }}>
+
                 <img
                   src={imageUrl}
                   alt={video.title}
