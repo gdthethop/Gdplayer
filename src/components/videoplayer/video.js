@@ -54,35 +54,31 @@ const VideoPlayer = () => {
     const match = url.match(/\/d\/(.+?)\//);
     return match ? `https://drive.google.com/file/d/${match[1]}/preview` : url;
   };
-  
 
   // Load video details
   useEffect(() => {
-    const url = getQueryParam('video');
-    const title = getQueryParam('title');
-    const description = getQueryParam('description');
+    const url = decodeURIComponent(getQueryParam('video') || '');
+    const title = decodeURIComponent(getQueryParam('title') || '');
+    const description = decodeURIComponent(getQueryParam('description') || '');
 
-    if (url) {
-      if (isYouTubeUrl(url)) {
-        setIsYouTubeVideo(true);
-        const videoId = extractYouTubeVideoId(url);
-        if (videoId) {
-          setVideoUrl(`https://www.youtube.com/embed/${videoId}`);
-        }
-      } else if (isGoogleDriveUrl(url)) {
-        setIsGoogleDriveVideo(true);
-        setVideoUrl(modifyGoogleDriveUrl(url)); // Use the modified Google Drive URL
+    if (!url) {
+      alert('Video URL is missing.');
+      return;
+    }
+
+    if (isYouTubeUrl(url)) {
+      setIsYouTubeVideo(true);
+      const videoId = extractYouTubeVideoId(url);
+      if (videoId) {
+        setVideoUrl(`https://www.youtube.com/embed/${videoId}`);
       } else {
-        setVideoUrl(url);
-        if (videoRef.current) {
-          videoRef.current.load();
-          videoRef.current.play().catch((error) => {
-            console.error('Video play failed:', error);
-          });
-        }
+        alert('Invalid YouTube URL.');
       }
+    } else if (isGoogleDriveUrl(url)) {
+      setIsGoogleDriveVideo(true);
+      setVideoUrl(modifyGoogleDriveUrl(url));
     } else {
-      alert('Video not found.');
+      setVideoUrl(url);
     }
 
     if (title) {
@@ -95,6 +91,16 @@ const VideoPlayer = () => {
     }
   }, []);
 
+  // Handle video autoplay
+  useEffect(() => {
+    if (videoRef.current && !isYouTubeVideo && !isGoogleDriveVideo) {
+      videoRef.current.load();
+      videoRef.current.play().catch((error) => {
+        console.error('Video play failed:', error);
+      });
+    }
+  }, [videoUrl]);
+
   return (
     <Box sx={{ backgroundColor: 'black', color: 'white', minHeight: '100vh' }}>
       {/* Header */}
@@ -102,7 +108,7 @@ const VideoPlayer = () => {
 
       {/* Main Content */}
       <Box sx={{ maxWidth: '90%', margin: 'auto', paddingTop: '100px' }}>
-        <Box sx={{ display: 'flex', gap: '20px' }}>
+        <Box sx={{ display: 'flex', gap: '20px', flexDirection: { xs: 'column', md: 'row' } }}>
           {/* Video Container */}
           <Box sx={{ flex: 2 }}>
             {isYouTubeVideo ? (
@@ -121,16 +127,14 @@ const VideoPlayer = () => {
                 title="Google Drive Video"
                 allow="autoplay; fullscreen"
                 style={{ width: '100%', height: '400px', borderRadius: '10px', border: 'none' }}
-                >
-                <source src={videoUrl} type="video/mp4" />
-                Your browser does not support the video tag.
-                </iframe>
+              />
             ) : (
               // Regular video
               <video
                 ref={videoRef}
                 controls
                 autoPlay
+                muted
                 style={{ width: '100%', borderRadius: '10px', boxShadow: '0 6px 20px rgba(0, 0, 0, 0.8)' }}
               >
                 <source src={videoUrl} type="video/mp4" />

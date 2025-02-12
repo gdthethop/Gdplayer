@@ -30,6 +30,7 @@ const CategoriesContainer = () => {
       try {
         const response = await fetch(SCRIPT_URL);
         const data = await response.json();
+        console.log('Fetched Data:', data); // Log the fetched data
         if (data) {
           const groupedData = {};
           data.forEach((row, index) => {
@@ -118,7 +119,9 @@ const VideoCarousel = ({ videos, trackRef }) => {
       >
         {videos.map((video) => {
           const videoId = decodeYouTubeLink(video.youtubeLink);
+          console.log('Video ID:', videoId); // Log the video ID
           const imageUrl = videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : '';
+          console.log('Image URL:', imageUrl); // Log the image URL
           return (
             <Box
               key={video.id}
