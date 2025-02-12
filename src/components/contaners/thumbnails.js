@@ -28,8 +28,12 @@ const CategoriesContainer = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(SCRIPT_URL);
-        const data = await response.json();
+        const response = await fetch(SCRIPT_URL).catch((error) => {
+          console.error('Fetch error:', error);
+        });
+        const data = await response.json().catch((error) => {
+          console.error('Error parsing JSON:', error);
+        });
         console.log('Fetched Data:', data); // Log the fetched data
         if (data) {
           const groupedData = {};

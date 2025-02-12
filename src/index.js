@@ -15,7 +15,7 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
-    <BrowserRouter>
+    <BrowserRouter basename="/Gdplayer">
     <Routes>
       <Route path="/" element={<App />} />
       <Route path="/login" element={<Login/>} />
