@@ -7,7 +7,7 @@ import { fetchVideoDetails } from "../../redux/videoSlice";
 import { useNavigate } from "react-router-dom"; // useNavigate for React Router v6
 import Skeleton from '@mui/material/Skeleton';
 
-const API_URL = "http://localhost:5000/api/videos";
+const API_URL = "https://gdbackend.onrender.com/api/videos";
 
 // CategoriesContainer component
 const CategoriesContainer = () => {

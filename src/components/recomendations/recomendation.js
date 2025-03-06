@@ -5,7 +5,7 @@ import { fetchVideoDetails } from "../../redux/videoSlice";
 import { useNavigate } from "react-router-dom";
 import Skeleton from "@mui/material/Skeleton";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api/videos";
+const API_URL = process.env.REACT_APP_API_URL || "https://gdbackend.onrender.com/api/videos";
 
 const Recommendation = ({ currentVideoId }) => {
   const [videos, setVideos] = useState([]);

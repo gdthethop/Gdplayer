@@ -3,7 +3,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 // ✅ Async Thunk to fetch video details
 export const fetchVideoDetails = createAsyncThunk('video/fetchVideoDetails', async (videoId, { rejectWithValue }) => {
     try {
-        const response = await fetch(`http://localhost:5000/api/videos/${videoId}`);
+        const response = await fetch(`https://gdbackend.onrender.com/api/videos/${videoId}`);
         if (!response.ok) {
             return rejectWithValue(`Failed to fetch video details: ${response.statusText}`);
         }
@@ -18,7 +18,7 @@ export const fetchVideoDetails = createAsyncThunk('video/fetchVideoDetails', asy
 // ✅ Async Thunk to update views
 export const updateVideoViews = createAsyncThunk('video/incrementViews', async (videoId, { rejectWithValue }) => {
     try {
-        const response = await fetch(`http://localhost:5000/api/videos/${videoId}/incrementViews`, {
+        const response = await fetch(`https://gdbackend.onrender.com/api/videos/${videoId}/incrementViews`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
         });
@@ -37,7 +37,7 @@ export const updateVideoViews = createAsyncThunk('video/incrementViews', async (
 // ✅ Async Thunk to submit a comment
 export const submitComment = createAsyncThunk('video/submitComment', async (commentData, { rejectWithValue }) => {
     try {
-        const response = await fetch(`http://localhost:5000/api/videos/${commentData.videoId}/comments`, {
+        const response = await fetch(`https://gdbackend.onrender.com/api/videos/${commentData.videoId}/comments`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -65,7 +65,7 @@ export const updateVideoLikes = createAsyncThunk('video/incrementLikes', async (
         return rejectWithValue('Invalid video ID');
     }
     try {
-        const response = await fetch(`http://localhost:5000/api/videos/${videoId}/incrementLikes`, {
+        const response = await fetch(`https://gdbackend.onrender.com/api/videos/${videoId}/incrementLikes`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
         });

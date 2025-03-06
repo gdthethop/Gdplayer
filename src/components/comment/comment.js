@@ -13,7 +13,7 @@ const CommentSection = ({ videoId }) => {
   useEffect(() => {
     if (videoId) {
       const fetchVideoComments = async () => {
-        const response = await fetch(`http://localhost:5000/api/videos/${videoId}/comments`);
+        const response = await fetch(`https://gdbackend.onrender.com/api/videos/${videoId}/comments`);
         const data = await response.json();
         setCommentList(data);  // Set the fetched comments in state
       };
@@ -43,7 +43,7 @@ const CommentSection = ({ videoId }) => {
 
       // Fetch the updated list of comments after submission
       const fetchUpdatedComments = async () => {
-        const response = await fetch(`http://localhost:5000/api/videos/${videoId}/comments`);
+        const response = await fetch(`https://gdbackend.onrender.com/api/videos/${videoId}/comments`);
         const data = await response.json();
         setCommentList(data);  // Update the comment list with the latest data
       };

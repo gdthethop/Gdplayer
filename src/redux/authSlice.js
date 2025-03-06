@@ -4,7 +4,7 @@ import axios from 'axios';
 // Signup user (ASYNC ACTION)
 export const signupUser = createAsyncThunk('auth/signup', async (userData, { rejectWithValue }) => {
     try {
-        const response = await axios.post('http://localhost:5000/api/auth/register', userData, {
+        const response = await axios.post('https://gdbackend.onrender.com/api/auth/register', userData, {
             headers: { 'Content-Type': 'application/json' }
         });
         return response.data; // If successful, return data
@@ -17,7 +17,7 @@ export const signupUser = createAsyncThunk('auth/signup', async (userData, { rej
 // Login user (ASYNC ACTION)
 export const loginUser = createAsyncThunk('auth/login', async (credentials, { rejectWithValue }) => {
     try {
-        const response = await axios.post('http://localhost:5000/api/auth/login', credentials, {
+        const response = await axios.post('https://gdbackend.onrender.com/api/auth/login', credentials, {
             headers: { 'Content-Type': 'application/json' }
         });
         return response.data; // If successful, return data

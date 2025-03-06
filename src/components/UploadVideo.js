@@ -24,7 +24,7 @@ const UploadVideo = () => {
         };
 
         try {
-            const response = await axios.post('http://localhost:5000/api/videos/upload', videoData);
+            const response = await axios.post('https://gdbackend.onrender.com/api/videos/upload', videoData);
             alert(response.data.message);
         } catch (error) {
             console.error('Error uploading video:', error);
