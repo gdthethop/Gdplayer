@@ -143,8 +143,8 @@ const VideoCarousel = ({ videos, trackRef, dispatch, navigate }) => {
         }}
       >
         {videos.map((video) => {
-          const imageUrl = video.thumbnail || '/fallback.jpg'; // Assuming video has a separate thumbnail URL
-          
+          const imageUrl = getThumbnailUrl(video.thumbnail); // Use getThumbnailUrl function
+
           return (
             <Box
               key={video._id}
@@ -153,7 +153,9 @@ const VideoCarousel = ({ videos, trackRef, dispatch, navigate }) => {
               onClick={(e) => {
                 e.preventDefault();
                 dispatch(fetchVideoDetails(video._id));
-                navigate(`/video?videoId=${encodeURIComponent(video._id)}&title=${encodeURIComponent(video.title)}&description=${encodeURIComponent(video.description)}`);
+                navigate(
+                  `/video?videoId=${encodeURIComponent(video._id)}&title=${encodeURIComponent(video.title)}&description=${encodeURIComponent(video.description)}&videoUrl=${encodeURIComponent(video.link)}`
+                );
               }}
               sx={{
                 flex: "0 0 auto",
@@ -174,7 +176,6 @@ const VideoCarousel = ({ videos, trackRef, dispatch, navigate }) => {
                   e.target.src = "/fallback.jpg"; // Use fallback image if error occurs
                 }}
               />
-
               <Box
                 className="overlay"
                 sx={{
@@ -255,6 +256,5 @@ const getThumbnailUrl = (link) => {
   // Return the link if it's already an image URL
   return link; 
 };
-
 
 export default CategoriesContainer;

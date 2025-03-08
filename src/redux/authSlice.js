@@ -7,7 +7,7 @@ export const signupUser = createAsyncThunk('auth/signup', async (userData, { rej
         const response = await axios.post('https://gdbackend.onrender.com/api/auth/register', userData, {
             headers: { 'Content-Type': 'application/json' }
         });
-        return response.data; // If successful, return data
+        return { user: response.data.user, token: response.data.token }; // Ensure user and token are returned
     } catch (error) {
         // If error, reject with message from the backend or a default message
         return rejectWithValue(error.response?.data || { message: 'Signup failed' });
@@ -20,7 +20,7 @@ export const loginUser = createAsyncThunk('auth/login', async (credentials, { re
         const response = await axios.post('https://gdbackend.onrender.com/api/auth/login', credentials, {
             headers: { 'Content-Type': 'application/json' }
         });
-        return response.data; // If successful, return data
+        return { user: response.data.user, token: response.data.token }; // Ensure user and token are returned
     } catch (error) {
         // If error, reject with message from the backend or a default message
         return rejectWithValue(error.response?.data || { message: 'Login failed' });
@@ -51,7 +51,7 @@ const authSlice = createSlice({
             .addCase(loginUser.fulfilled, (state, action) => {
                 state.status = 'succeeded'; // Set status to 'succeeded' on success
                 state.token = action.payload.token;
-                state.user = action.payload.user;
+                state.user = action.payload.user; // Set user in state
                 localStorage.setItem('token', action.payload.token);
                 localStorage.setItem('user', JSON.stringify(action.payload.user));
             })

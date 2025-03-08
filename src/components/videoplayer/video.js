@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchVideoDetails, updateVideoViews, updateVideoLikes } from '../../redux/videoSlice';
 import { Box, Typography, IconButton } from '@mui/material';
@@ -18,7 +18,7 @@ const VideoPlayer = () => {
     return params.get(param);
   };
 
-    const videoId = getQueryParam('videoId') || 'defaultVideoId'; // Set a default video ID if none is provided
+  const videoId = getQueryParam('videoId') || 'defaultVideoId'; // Set a default video ID if none is provided
 
   const {
     videoUrl,
@@ -60,26 +60,18 @@ const VideoPlayer = () => {
             ) : (
               <>
                 {videoUrl ? (
-                  <iframe
-                    src={videoUrl}
-                    width="100%"
-                    height="400px"
-                    frameBorder="0"
-                    allow="autoplay; fullscreen"
-                    allowFullScreen
-                    style={{ borderRadius: '10px' }}
-                  />
-                ) : videoUrl ? (
-                  <video
-                    ref={videoRef}
-                    controls
-                    autoPlay
-                    muted
-                    style={{ width: '100%',height:"400px", borderRadius: '10px', boxShadow: '0 6px 20px rgba(0, 0, 0, 0.8)' }}
-                  >
-                    <source src={videoUrl} type="video/mp4" />
-                    Your browser does not support the video tag.
-                  </video>
+                  <div style={{ width: "100%", height: "400px", borderRadius: '10px', overflow: 'hidden' }}>
+                    <video
+                      ref={videoRef}
+                      controls
+                      autoPlay
+                      muted
+                      style={{ width: '100%', height: '100%', borderRadius: '10px', boxShadow: '0 6px 20px rgba(0, 0, 0, 0.8)' }}
+                    >
+                      <source src={videoUrl} type="video/mp4" />
+                      Your browser does not support the video tag.
+                    </video>
+                  </div>
                 ) : (
                   <Typography sx={{ fontSize: '18px', color: 'red' }}>Video URL is missing.</Typography>
                 )}

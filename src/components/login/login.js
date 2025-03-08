@@ -30,13 +30,13 @@ const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch(); // Declare dispatch here
 
-const onSubmit = async (data) => {
-  console.log("Submitting data:", data); // Log the submitted data
+const onSubmit = async (data) => { // Log the submitted data
   setError(''); // Reset error state before login attempt
   console.error("Login failed:", error);
 
     try {
-      await dispatch(loginUser(data)).unwrap();
+      const result = await dispatch(loginUser(data)).unwrap();
+    
       navigate("/home");
     } catch (error) {
       setError(error.response?.data?.error || "Invalid email or password");
