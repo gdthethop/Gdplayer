@@ -3,7 +3,7 @@ import { Box, Typography, IconButton } from "@mui/material";
 import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import { useDispatch } from "react-redux";
-import { fetchVideoDetails } from "../../redux/videoSlice";
+import { fetchVideoDetails, fetchVideoDetailsByShortCode } from "../../redux/videoSlice";
 import { useNavigate } from "react-router-dom"; // useNavigate for React Router v6
 import Skeleton from '@mui/material/Skeleton';
 
@@ -152,10 +152,13 @@ const VideoCarousel = ({ videos, trackRef, dispatch, navigate }) => {
               component="a"
               onClick={(e) => {
                 e.preventDefault();
-                dispatch(fetchVideoDetails(video._id));
-                navigate(
-                  `/video?videoId=${encodeURIComponent(video._id)}&title=${encodeURIComponent(video.title)}&description=${encodeURIComponent(video.description)}&videoUrl=${encodeURIComponent(video.link)}`
-                );
+                if (video.shortCode) {
+                  dispatch(fetchVideoDetailsByShortCode(video.shortCode));
+                  navigate(`/video/${encodeURIComponent(video.shortCode)}`);
+                } else {
+                  dispatch(fetchVideoDetails(video._id));
+                  navigate(`/video/${encodeURIComponent(video._id)}`);
+                }
               }}
               sx={{
                 flex: "0 0 auto",

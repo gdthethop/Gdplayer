@@ -30,6 +30,7 @@ root.render(
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot" element={<ForgotPassword />} />
           <Route path="/video" element={<VideoPlayer />} />
+          <Route path="/video/:shortCode" element={<VideoPlayer />} />
           <Route path="/gd" element={<UploadVideo />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

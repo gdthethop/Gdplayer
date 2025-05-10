@@ -1,162 +1,102 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import axios from 'axios';
 
-// ✅ Async Thunk to fetch video details
-export const fetchVideoDetails = createAsyncThunk('video/fetchVideoDetails', async (videoId, { rejectWithValue }) => {
-    try {
-        const response = await fetch(`https://gdbackend.onrender.com/api/videos/${videoId}`);
-        if (!response.ok) {
-            return rejectWithValue(`Failed to fetch video details: ${response.statusText}`);
-        }
+// Define the initial state
+const initialState = {
+  videoUrl: '',
+  videoTitle: '',
+  videoDescription: '',
+  videoThumbnail: '',
+  videoRuntime: '',
+  videoViews: 0,
+  videoGenres: '',
+  videoLikes: 0,
+  videoDislikes: 0,
+  status: 'idle',
+  error: null,
+};
 
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        return rejectWithValue(error.message || 'Something went wrong');
-    }
+// Create async thunks for API calls
+export const fetchVideoDetails = createAsyncThunk('video/fetchVideoDetails', async (id) => {
+  const response = await axios.get(`https://gdbackend.onrender.com/api/videos/${id}`);
+  return response.data;
 });
 
-// ✅ Async Thunk to update views
-export const updateVideoViews = createAsyncThunk('video/incrementViews', async (videoId, { rejectWithValue }) => {
-    try {
-        const response = await fetch(`https://gdbackend.onrender.com/api/videos/${videoId}/incrementViews`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-        });
+export const fetchVideoDetailsByShortCode = createAsyncThunk(
+  'video/fetchVideoDetailsByShortCode',
+  async (shortCode) => {
+    const response = await axios.get(`https://gdbackend.onrender.com/api/videos/short/${shortCode}`);
+    return response.data;
+  }
+);
 
-        if (!response.ok) {
-            return rejectWithValue(`Failed to update views: ${response.statusText}`);
-        }
+export const updateVideoViews = createAsyncThunk(
+  'video/updateVideoViews',
+  async (id) => {
+    const response = await axios.patch(`https://gdbackend.onrender.com/api/videos/${id}/incrementViews`);
+    return response.data;
+  }
+);
 
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        return rejectWithValue(error.message || 'Failed to update views');
-    }
+export const submitComment = createAsyncThunk('video/submitComment', async (commentData) => {
+  const response = await axios.post('https://gdbackend.onrender.com/api/videos/comment', commentData);
+  return response.data;
 });
 
-// ✅ Async Thunk to submit a comment
-export const submitComment = createAsyncThunk('video/submitComment', async (commentData, { rejectWithValue }) => {
-    try {
-        const response = await fetch(`https://gdbackend.onrender.com/api/videos/${commentData.videoId}/comments`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                text: commentData.text,  // Pass 'text' as it matches the backend schema
-                user_id: commentData.user_id,  // Pass 'user_id' for the user making the comment
-                name: commentData.name,  // Pass 'name' as part of the comment
-                date: commentData.date,  // Pass 'date' as part of the comment
-            }),
-        });
-
-        if (!response.ok) {
-            return rejectWithValue(`Failed to submit comment: ${response.statusText}`);
-        }
-
-        const data = await response.json();  // Parse the response from the backend
-        return data;
-    } catch (error) {
-        return rejectWithValue(error.message || 'Failed to submit comment');
-    }
-});
-
-// ✅ Async Thunk to update likes
-export const updateVideoLikes = createAsyncThunk('video/incrementLikes', async (videoId, { rejectWithValue }) => {
-    if (!videoId) {
-        return rejectWithValue('Invalid video ID');
-    }
-    try {
-        const response = await fetch(`https://gdbackend.onrender.com/api/videos/${videoId}/incrementLikes`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-        });
-
-        if (!response.ok) {
-            return rejectWithValue(`Failed to update likes: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log("Response from API (Likes):", data);
-        return data;
-    } catch (error) {
-        return rejectWithValue(error.message || 'Failed to update likes');
-    }
-});
-
-// ✅ Redux slice for video state management
+// Slice to handle actions
 const videoSlice = createSlice({
-    name: 'video',
-    initialState: {
-        videoUrl: '',
-        videoTitle: '',
-        videoDescription: '',
-        videoThumbnail: '',
-        videoRuntime: '',
-        videoViews: 0,
-        videoGenres: '',
-        videoLikes: 0,
-        status: 'idle',
-        error: null,
-        isUpdatingViews: false,
-        isUpdatingLikes: false,
+  name: 'video',
+  initialState,
+  reducers: {
+    // Reducers to handle local state for likes and dislikes
+    incrementVideoLikes: (state) => {
+      state.videoLikes += 1;
     },
-
-    reducers: {
-        incrementViews: (state) => {
-            state.videoViews += 1;
-        },
-        incrementLikes: (state, action) => {
-            state.videoLikes = action.payload.likes; // Ensure correct update
-        },
+    decrementVideoLikes: (state) => {
+      state.videoLikes -= 1;
     },
-    extraReducers: (builder) => {
-        builder
-            .addCase(fetchVideoDetails.pending, (state) => {
-                state.status = 'loading';
-                state.error = null;
-            })
-            .addCase(fetchVideoDetails.fulfilled, (state, action) => {
-                if (action.payload) {
-                    state.videoUrl = action.payload.link || '';
-                    state.videoTitle = action.payload.title || 'Unknown Title';
-                    state.videoDescription = action.payload.description || 'No description available';
-                    state.videoThumbnail = action.payload.thumbnail || '/fallback.jpg';
-                    state.videoRuntime = action.payload.runtime || '';
-                    state.videoViews = action.payload.views || 0;
-                    state.videoGenres = action.payload.genres || '';
-                    state.videoLikes = action.payload.likes || 0;
-                }
-                state.status = 'succeeded';
-            })
-            .addCase(fetchVideoDetails.rejected, (state, action) => {
-                state.status = 'failed';
-                state.error = action.payload || 'Failed to fetch video details';
-            })
-            .addCase(updateVideoViews.pending, (state) => {
-                state.isUpdatingViews = true;
-            })
-            .addCase(updateVideoViews.fulfilled, (state) => {
-                state.videoViews += 1;
-                state.isUpdatingViews = false;
-            })
-            .addCase(updateVideoViews.rejected, (state, action) => {
-                state.isUpdatingViews = false;
-                state.error = action.payload || 'Failed to update views';
-            })
-            .addCase(updateVideoLikes.pending, (state) => {
-                state.isUpdatingLikes = true;
-            })
-            .addCase(updateVideoLikes.fulfilled, (state, action) => {
-                if (action.payload && action.payload.likes !== undefined) {
-                    state.videoLikes = action.payload.likes; // Set updated likes
-                }
-                state.isUpdatingLikes = false;
-            })
-            .addCase(updateVideoLikes.rejected, (state, action) => {
-                state.isUpdatingLikes = false;
-                state.error = action.payload || 'Failed to update likes';
-            });
+    updateVideoLikes: (state, action) => {
+      state.videoLikes = action.payload;
+    }, // Add this action
+    incrementVideoDislikes: (state) => {
+      state.videoDislikes += 1;
     },
+    decrementVideoDislikes: (state) => {
+      state.videoDislikes -= 1;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchVideoDetails.fulfilled, (state, action) => {
+        state.videoUrl = action.payload.link;
+        state.videoTitle = action.payload.title;
+        state.videoDescription = action.payload.description;
+        state.videoViews = action.payload.views;
+        state.videoLikes = action.payload.likes;
+        state.videoDislikes = action.payload.dislikes;
+      })
+      .addCase(fetchVideoDetailsByShortCode.fulfilled, (state, action) => {
+        state.videoUrl = action.payload.link;
+        state.videoTitle = action.payload.title;
+        state.videoDescription = action.payload.description;
+        state.videoViews = action.payload.views;
+        state.videoLikes = action.payload.likes;
+        state.videoDislikes = action.payload.dislikes;
+      })
+      .addCase(updateVideoViews.fulfilled, (state, action) => {
+        state.videoViews = action.payload.views;
+      });
+  },
 });
 
-export const { incrementViews, incrementLikes } = videoSlice.actions;
+// Export the actions
+export const {
+  incrementVideoLikes,
+  decrementVideoLikes,
+  updateVideoLikes, // Add this to the exports
+  incrementVideoDislikes,
+  decrementVideoDislikes,
+} = videoSlice.actions;
+
+// Export the thunks and the slice reducer
 export default videoSlice.reducer;
