@@ -1,22 +1,21 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useDispatch } from 'react-redux';
 import { Container, Typography, TextField, Button, Box, Link, CssBaseline, Paper } from '@mui/material';
-import { createTheme, ThemeProvider } from '@mui/material/styles'; // Import createTheme
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { signupUser } from '../../redux/authSlice'; // Import signupUser action
+import { useForm, Controller } from 'react-hook-form';
+import { signupUser } from '../../redux/authSlice';
 
-// Define the theme
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#ff0000', // Red color
+      main: '#ff0000',
     },
     background: {
-      default: '#000000', // Black background
+      default: '#000000',
     },
     text: {
-      primary: '#ffffff', // White text
+      primary: '#ffffff',
     },
   },
   typography: {
@@ -25,36 +24,30 @@ const theme = createTheme({
 });
 
 const Signup = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { control, handleSubmit, formState: { errors }, watch } = useForm();
+  const [error, setError] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError(''); // Reset error state
-    if (password !== confirmPassword) {
-      setError("Passwords do not match!");
-      return;
-    }
+  const password = watch('password', '');
+
+  const onSubmit = async (data) => {
+    setError('');
     setLoading(true);
     try {
-      await dispatch(signupUser({ name, email, password })).unwrap();
-      navigate("/"); // Navigate to home page after successful signup
+      await dispatch(signupUser({ name: data.name, email: data.email, password: data.password })).unwrap();
+      navigate('/');
     } catch (error) {
-      setError(error.response?.data?.error || "Signup failed. Please try again.");
-      console.error("Signup failed:", error);
+      setError(error.response?.data?.error || 'Signup failed. Please try again.');
+      console.error('Signup failed:', error);
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   const handleClk = () => {
-    navigate("/login");
+    navigate('/login');
   };
 
   return (
@@ -69,7 +62,7 @@ const Signup = () => {
         justifyContent: 'center',
       }}
     >
-      <ThemeProvider theme={theme}> {/* Wrap with ThemeProvider */}
+      <ThemeProvider theme={theme}>
         <CssBaseline />
         <Container
           component="main"
@@ -119,54 +112,113 @@ const Signup = () => {
             <Typography variant="body2" sx={{ marginBottom: 2 }}>
               Please fill in this form to create an account.
             </Typography>
-            <Box component="form" noValidate sx={{ width: '100%' }} onSubmit={handleSubmit}>
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                id="name"
-                label="Name"
+            <Box component="form" noValidate sx={{ width: '100%' }} onSubmit={handleSubmit(onSubmit)}>
+              <Controller
                 name="name"
-                autoComplete="name"
-                autoFocus
-                sx={{ backgroundColor: '#333', borderRadius: 1, input: { color: '#ffffff' } }}
-                onChange={(e) => setName(e.target.value)}
+                control={control}
+                defaultValue=""
+                rules={{ required: 'Name is required' }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="name"
+                    label="Name"
+                    autoComplete="name"
+                    autoFocus
+                    sx={{ backgroundColor: '#333', borderRadius: 1, input: { color: '#ffffff' } }}
+                    error={!!errors.name}
+                    helperText={errors.name?.message}
+                  />
+                )}
               />
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                id="email"
-                label="Email"
+              <Controller
                 name="email"
-                autoComplete="email"
-                sx={{ backgroundColor: '#333', borderRadius: 1, input: { color: '#ffffff' } }}
-                onChange={(e) => setEmail(e.target.value)}
+                control={control}
+                defaultValue=""
+                rules={{
+                  required: 'Email is required',
+                  pattern: {
+                    value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                    message: 'Invalid email address',
+                  },
+                }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="email"
+                    label="Email"
+                    autoComplete="email"
+                    sx={{ backgroundColor: '#333', borderRadius: 1, input: { color: '#ffffff' } }}
+                    error={!!errors.email}
+                    helperText={errors.email?.message}
+                  />
+                )}
               />
-              <TextField
-                margin="normal"
-                required
-                fullWidth
+              <Controller
                 name="password"
-                label="Password"
-                type="password"
-                id="password"
-                autoComplete="new-password"
-                sx={{ backgroundColor: '#333', borderRadius: 1, input: { color: '#ffffff' } }}
-                onChange={(e) => setPassword(e.target.value)}
+                control={control}
+                defaultValue=""
+                rules={{
+                  required: 'Password is required',
+                  minLength: {
+                    value: 6,
+                    message: 'Password must be at least 6 characters',
+                  },
+                }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    margin="normal"
+                    required
+                    fullWidth
+                    name="password"
+                    label="Password"
+                    type="password"
+                    id="password"
+                    autoComplete="new-password"
+                    sx={{ backgroundColor: '#333', borderRadius: 1, input: { color: '#ffffff' } }}
+                    error={!!errors.password}
+                    helperText={errors.password?.message}
+                  />
+                )}
               />
-              <TextField
-                margin="normal"
-                required
-                fullWidth
+              <Controller
                 name="confirmPassword"
-                label="Confirm Password"
-                type="password"
-                id="confirm_password"
-                autoComplete="new-password"
-                sx={{ backgroundColor: '#333', borderRadius: 1, input: { color: '#ffffff' } }}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                control={control}
+                defaultValue=""
+                rules={{
+                  required: 'Confirm Password is required',
+                  validate: value =>
+                    value === password || 'Passwords do not match',
+                }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    margin="normal"
+                    required
+                    fullWidth
+                    name="confirmPassword"
+                    label="Confirm Password"
+                    type="password"
+                    id="confirm_password"
+                    autoComplete="new-password"
+                    sx={{ backgroundColor: '#333', borderRadius: 1, input: { color: '#ffffff' } }}
+                    error={!!errors.confirmPassword}
+                    helperText={errors.confirmPassword?.message}
+                  />
+                )}
               />
+              {error && (
+                <Typography color="error" sx={{ textAlign: 'center', color: '#a80000' }}>
+                  {error}
+                </Typography>
+              )}
               <Button
                 type="submit"
                 fullWidth
@@ -174,7 +226,7 @@ const Signup = () => {
                 sx={{ mt: 2, mb: 2, padding: 1 }}
                 disabled={loading}
               >
-                {loading ? "Signing Up..." : "Sign Up"}
+                {loading ? 'Signing Up...' : 'Sign Up'}
               </Button>
             </Box>
 
@@ -182,7 +234,15 @@ const Signup = () => {
             <Box sx={{ marginTop: 2, textAlign: 'center' }}>
               <Typography variant="body2" sx={{ color: '#ffffff' }}>
                 Already have an account?{' '}
-                <Link onClick={handleClk} sx={{ color: '#ffffff', cursor: 'pointer', textDecoration: 'none', '&:hover': { color: '#a80000' } }}>
+                <Link
+                  onClick={handleClk}
+                  sx={{
+                    color: '#ffffff',
+                    cursor: 'pointer',
+                    textDecoration: 'none',
+                    '&:hover': { color: '#a80000' },
+                  }}
+                >
                   Login
                 </Link>
               </Typography>

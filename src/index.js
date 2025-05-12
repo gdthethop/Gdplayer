@@ -23,7 +23,7 @@ root.render(
   <React.StrictMode>
     <Provider store={store}>
       <ErrorBoundary>
-      <HashRouter basename="/Gdplayer">
+      <HashRouter>
         <Routes>
           <Route path="/" element={<App />} />
           <Route

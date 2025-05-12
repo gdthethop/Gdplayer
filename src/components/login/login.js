@@ -120,7 +120,13 @@ const onSubmit = async (data) => { // Log the submitted data
                 name="email"
                 control={control}
                 defaultValue=""
-                rules={{ required: 'Email is required' }}
+                rules={{
+                  required: 'Email is required',
+                  pattern: {
+                    value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                    message: 'Invalid email address',
+                  },
+                }}
                 render={({ field }) => (
                   <TextField
                     {...field}
@@ -141,7 +147,13 @@ const onSubmit = async (data) => { // Log the submitted data
                 name="password"
                 control={control}
                 defaultValue=""
-                rules={{ required: 'Password is required' }}
+                rules={{
+                  required: 'Password is required',
+                  minLength: {
+                    value: 6,
+                    message: 'Password must be at least 6 characters',
+                  },
+                }}
                 render={({ field }) => (
                   <TextField
                     {...field}
