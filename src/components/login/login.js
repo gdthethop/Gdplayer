@@ -2,7 +2,7 @@ import React from 'react';
 import { useDispatch } from 'react-redux';
 import { Container, Typography, TextField, Button, Box, Link, CssBaseline, Paper } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { loginUser } from '../../redux/authSlice';
 
@@ -28,6 +28,7 @@ const Login = () => {
   const { control, handleSubmit, formState: { errors } } = useForm();
   const [error, setError] = React.useState('');
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch(); // Declare dispatch here
 
 const onSubmit = async (data) => { // Log the submitted data
@@ -36,8 +37,8 @@ const onSubmit = async (data) => { // Log the submitted data
 
     try {
       const result = await dispatch(loginUser(data)).unwrap();
-    
-      navigate("/home");
+      const from = location.state?.from?.pathname || "/home";
+      navigate(from, { replace: true });
     } catch (error) {
       setError(error.response?.data?.error || "Invalid email or password");
       console.error("Login failed:", error);
