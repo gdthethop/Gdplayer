@@ -22,7 +22,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-
-.prettierrc
-.gitattributes
-.eslintignore
+/.husky
+/run/_
+.env
+/.env.local
+/.env.development
+/.env.test
+/.env.production
