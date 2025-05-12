@@ -18,10 +18,12 @@ import Header from '../header/header';
 import CommentSection from '../comment/comment';
 import Recommendation from '../recomendations/recomendation';
 import { useParams, useLocation } from 'react-router-dom';
+import Hls from 'hls.js';
 
 const VideoPlayer = () => {
   const dispatch = useDispatch();
   const videoRef = useRef(null);
+  const hlsRef = useRef(null);
   const { shortCode } = useParams();
   const location = useLocation();
 
@@ -47,9 +49,44 @@ const VideoPlayer = () => {
     isUpdatingDislikes,
   } = useSelector((state) => state.video);
 
-  React.useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.load();
+  useEffect(() => {
+    if (!videoUrl) return;
+
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
+    }
+
+    if (
+      videoRef.current &&
+      !videoUrl.startsWith('https://player.cloudinary.com/embed/')
+    ) {
+      // Only initialize hls.js if not a Cloudinary embed URL
+      const isHlsStream =
+        videoUrl.includes('.m3u8') || videoUrl.includes('cloudinary.com');
+
+      if (Hls.isSupported() && isHlsStream) {
+        const hls = new Hls();
+        hlsRef.current = hls;
+        hls.loadSource(videoUrl);
+        hls.attachMedia(videoRef.current);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          videoRef.current.play();
+        });
+        hls.on(Hls.Events.ERROR, (event, data) => {
+          console.error('HLS.js error:', data);
+        });
+      } else if (
+        videoRef.current.canPlayType('application/vnd.apple.mpegurl')
+      ) {
+        videoRef.current.src = videoUrl;
+        videoRef.current.addEventListener('loadedmetadata', () => {
+          videoRef.current.play();
+        });
+      } else {
+        videoRef.current.src = videoUrl;
+        videoRef.current.load();
+      }
     }
   }, [videoUrl]);
 
@@ -122,31 +159,54 @@ const VideoPlayer = () => {
               </Typography>
             ) : videoUrl ? (
               <>
-                <Box
-                  sx={{
-                    width: '100%',
-                    height: '400px',
-                    borderRadius: '10px',
-                    overflow: 'hidden',
-                  }}
-                >
-                  <video
-                    ref={videoRef}
-                    controls
-                    autoPlay
-                    muted
-                    style={{
+                {videoUrl.startsWith('https://player.cloudinary.com/embed/') ? (
+                  <Box
+                    sx={{
                       width: '100%',
-                      height: '100%',
+                      height: '400px',
                       borderRadius: '10px',
-                      boxShadow: '0 6px 20px rgba(0, 0, 0, 0.8)',
+                      overflow: 'hidden',
                     }}
                   >
-                    <source src={videoUrl} type="video/mp4" />
-                    Your browser does not support the video tag.
-                  </video>
-                </Box>
-
+                    <iframe
+                      title="Cloudinary Video Player"
+                      src={videoUrl}
+                      width="100%"
+                      height="100%"
+                      frameBorder="0"
+                      allow="autoplay; fullscreen"
+                      allowFullScreen
+                      style={{ borderRadius: '10px' }}
+                    />
+                  </Box>
+                ) : (
+                  <Box
+                    sx={{
+                      width: '100%',
+                      height: '400px',
+                      borderRadius: '10px',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <video
+                      ref={videoRef}
+                      controls
+                      autoPlay
+                      muted
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: '10px',
+                        boxShadow: '0 6px 20px rgba(0, 0, 0, 0.8)',
+                      }}
+                    >
+                      {!videoUrl.includes('.m3u8') && (
+                        <source src={videoUrl} type="video/mp4" />
+                      )}
+                      Your browser does not support the video tag.
+                    </video>
+                  </Box>
+                )}
                 <Box
                   sx={{
                     display: 'flex',
