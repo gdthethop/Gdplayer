@@ -44,11 +44,6 @@ Open [http://localhost:3000](http://localhost:3000) in your browser to view the 
 
 ### Code Formatting
 
-This project uses [Prettier](https://prettier.io/) for code formatting. To format the codebase, run:
-```bash
-npm run format
-```
-
 ## Future Updates
 
 - Enhanced video search and filtering options
