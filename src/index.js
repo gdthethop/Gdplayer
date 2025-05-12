@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 // import reportWebVitals from './reportWebVitals';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { HashRouter, Route, Routes } from 'react-router-dom';
 import Signup from './components/signup/signup';
 import ForgotPassword from './components/forgot/forgot';
 import Login from './components/login/login';
@@ -23,7 +23,7 @@ root.render(
   <React.StrictMode>
     <Provider store={store}>
       <ErrorBoundary>
-      <BrowserRouter basename="/Gdplayer">
+      <HashRouter basename="/Gdplayer">
         <Routes>
           <Route path="/" element={<App />} />
           <Route
@@ -63,7 +63,7 @@ root.render(
           />
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </BrowserRouter>
+      </HashRouter>
       </ErrorBoundary>
     </Provider>
   </React.StrictMode>
