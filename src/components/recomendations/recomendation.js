@@ -7,7 +7,7 @@ import Skeleton from "@mui/material/Skeleton";
 
 const API_URL = process.env.REACT_APP_API_URL || "https://gdbackend.onrender.com/api/videos";
 
-const Recommendation = ({ currentVideoId }) => {
+const Recommendation = ({ currentVideoId, currentVideoShortCode }) => {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true); 
   const [error, setError] = useState(null); 
@@ -27,7 +27,7 @@ const Recommendation = ({ currentVideoId }) => {
           return;
         }
 
-        setVideos(data.filter(video => video._id !== currentVideoId)); 
+        setVideos(data.filter(video => video._id !== currentVideoId && video.shortCode !== currentVideoShortCode)); 
       } catch (error) {
         setError("Error fetching data: " + error.message);
         console.error("Error fetching data:", error);

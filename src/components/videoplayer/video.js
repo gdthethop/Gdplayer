@@ -5,6 +5,7 @@ import {
   fetchVideoDetailsByShortCode,
   updateVideoViews,
   updateVideoLikes,
+  incrementVideoLikes,
   decrementVideoLikes,
   incrementVideoDislikes,
   decrementVideoDislikes,
@@ -45,6 +46,12 @@ const VideoPlayer = () => {
     isUpdatingDislikes,
   } = useSelector((state) => state.video);
 
+  React.useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.load();
+    }
+  }, [videoUrl]);
+
   const user = useSelector((state) => state.auth.user);
 
   useEffect(() => {
@@ -61,16 +68,15 @@ const VideoPlayer = () => {
 const getCurrentVideoId = () => shortCode || videoIdFromQuery || videoId;
 
   const handleLike = () => {
-    const id = getCurrentVideoId();
-    if (!isUpdatingLikes && id) {
+    if (!isUpdatingLikes) {
       if (hasLiked) {
-        dispatch(decrementVideoLikes(id));
+        dispatch(decrementVideoLikes());
         setHasLiked(false);
       } else {
-        dispatch(updateVideoLikes(id));
+        dispatch(incrementVideoLikes());
         setHasLiked(true);
         if (hasDisliked) {
-          dispatch(decrementVideoDislikes(id));
+          dispatch(decrementVideoDislikes());
           setHasDisliked(false);
         }
       }
@@ -78,16 +84,15 @@ const getCurrentVideoId = () => shortCode || videoIdFromQuery || videoId;
   };
 
   const handleDislike = () => {
-    const id = getCurrentVideoId();
-    if (!isUpdatingDislikes && id) {
+    if (!isUpdatingDislikes) {
       if (hasDisliked) {
-        dispatch(decrementVideoDislikes(id));
+        dispatch(decrementVideoDislikes());
         setHasDisliked(false);
       } else {
-        dispatch(incrementVideoDislikes(id));
+        dispatch(incrementVideoDislikes());
         setHasDisliked(true);
         if (hasLiked) {
-          dispatch(decrementVideoLikes(id));
+          dispatch(decrementVideoLikes());
           setHasLiked(false);
         }
       }
@@ -178,7 +183,7 @@ const getCurrentVideoId = () => shortCode || videoIdFromQuery || videoId;
             <Typography variant="h3" sx={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '20px' }}>
               Recommended Videos
             </Typography>
-            <Recommendation currentVideoId={videoId} currentVideoShortCode={shortCode} />
+            <Recommendation currentVideoId={getCurrentVideoId()} currentVideoShortCode={shortCode} />
           </Box>
         </Box>
       </Box>

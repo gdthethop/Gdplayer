@@ -34,7 +34,7 @@ const Header = () => {
         }}
       >
         <img
-          src="logo.png"
+          src={process.env.PUBLIC_URL + '/logo.png'}
           alt="logo"
           style={{
             width: '60px', // Default size for desktop
@@ -50,8 +50,8 @@ const Header = () => {
           component="a"
           variant="h1"
           sx={{
-            fontSize: '18px',
-            fontWeight: 700,
+            fontSize: '22px',
+            fontWeight: 900,
             color: 'white',
             cursor:'default',
             display: { xs: 'none', md: 'block' } // Show on mobile

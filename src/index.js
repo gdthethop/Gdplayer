@@ -15,6 +15,7 @@ import { Provider } from 'react-redux';
 import store from './redux/store';
 import Home from './components/home/home';
 import UploadVideo from './components/UploadVideo';
+import PrivateRoute from './components/PrivateRoute';
 
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -25,13 +26,41 @@ root.render(
       <BrowserRouter basename="/Gdplayer">
         <Routes>
           <Route path="/" element={<App />} />
-          <Route path="/home" element={<Home />} />
+          <Route
+            path="/home"
+            element={
+              <PrivateRoute>
+                <Home />
+              </PrivateRoute>
+            }
+          />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot" element={<ForgotPassword />} />
-          <Route path="/video" element={<VideoPlayer />} />
-          <Route path="/video/:shortCode" element={<VideoPlayer />} />
-          <Route path="/gd" element={<UploadVideo />} />
+          <Route
+            path="/video"
+            element={
+              <PrivateRoute>
+                <VideoPlayer />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/video/:shortCode"
+            element={
+              <PrivateRoute>
+                <VideoPlayer />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/gd"
+            element={
+              <PrivateRoute>
+                <UploadVideo />
+              </PrivateRoute>
+            }
+          />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
