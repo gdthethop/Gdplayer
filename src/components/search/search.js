@@ -16,8 +16,8 @@ const SearchComponent = () => {
         display: 'flex',
         justifyContent: 'flex-end',
         '@media (max-width: 600px)': {
-              width: isHovered || isFocused ? '200px' : '50px', // Smaller size for mobile
-            },
+          width: isHovered || isFocused ? '200px' : '50px', // Smaller size for mobile
+        },
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
@@ -38,7 +38,7 @@ const SearchComponent = () => {
           width: '100%',
           opacity: isHovered || isFocused ? 1 : 0, // Input remains visible while typing
           transition: 'opacity 0.3s ease-in-out',
-          '& .MuiOutlinedInput-root': { 
+          '& .MuiOutlinedInput-root': {
             maxWidth: '100%', // Ensure it fits well in mobile view
             borderRadius: '20px',
             paddingRight: '40px',
@@ -58,7 +58,10 @@ const SearchComponent = () => {
           position: 'absolute',
           top: '50%',
           right: '0px',
-          transform: isHovered || isFocused ? 'translateY(-50%) rotate(360deg)' : 'translateY(-50%)',
+          transform:
+            isHovered || isFocused
+              ? 'translateY(-50%) rotate(360deg)'
+              : 'translateY(-50%)',
           backgroundColor: '#c10000',
           borderRadius: '50%',
           width: '30px',

@@ -1,5 +1,5 @@
-import React, { Component } from "react";
-import { Box, Typography, Button } from "@mui/material";
+import React, { Component } from 'react';
+import { Box, Typography, Button } from '@mui/material';
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -12,7 +12,7 @@ class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error("Error caught by Error Boundary:", error, errorInfo);
+    console.error('Error caught by Error Boundary:', error, errorInfo);
   }
 
   handleReset = () => {
@@ -22,16 +22,20 @@ class ErrorBoundary extends Component {
   render() {
     if (this.state.hasError) {
       return (
-        <Box sx={{ textAlign: "center", mt: 10 }}>
-          <Typography variant="h4" sx={{ color: "#FF5722" }}>
+        <Box sx={{ textAlign: 'center', mt: 10 }}>
+          <Typography variant="h4" sx={{ color: '#FF5722' }}>
             Something went wrong!
           </Typography>
-          <Typography variant="body1" sx={{ color: "#757575", mt: 2 }}>
+          <Typography variant="body1" sx={{ color: '#757575', mt: 2 }}>
             Please refresh the page or try again later.
           </Typography>
           <Button
             variant="contained"
-            sx={{ mt: 3, backgroundColor: "#FF5722", "&:hover": { backgroundColor: "#E64A19" } }}
+            sx={{
+              mt: 3,
+              backgroundColor: '#FF5722',
+              '&:hover': { backgroundColor: '#E64A19' },
+            }}
             onClick={this.handleReset}
           >
             Try Again

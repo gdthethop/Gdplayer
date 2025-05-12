@@ -1,6 +1,15 @@
 import React from 'react';
 import { useDispatch } from 'react-redux';
-import { Container, Typography, TextField, Button, Box, Link, CssBaseline, Paper } from '@mui/material';
+import {
+  Container,
+  Typography,
+  TextField,
+  Button,
+  Box,
+  Link,
+  CssBaseline,
+  Paper,
+} from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
@@ -25,48 +34,53 @@ const theme = createTheme({
 });
 
 const Login = () => {
-  const { control, handleSubmit, formState: { errors } } = useForm();
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
   const [error, setError] = React.useState('');
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch(); // Declare dispatch here
 
-const onSubmit = async (data) => { // Log the submitted data
-  setError(''); // Reset error state before login attempt
-  console.error("Login failed:", error);
+  const onSubmit = async (data) => {
+    // Log the submitted data
+    setError(''); // Reset error state before login attempt
+    console.error('Login failed:', error);
 
     try {
       const result = await dispatch(loginUser(data)).unwrap();
-      const from = location.state?.from?.pathname || "/home";
+      const from = location.state?.from?.pathname || '/home';
       navigate(from, { replace: true });
     } catch (error) {
-      setError(error.response?.data?.error || "Invalid email or password");
-      console.error("Login failed:", error);
+      setError(error.response?.data?.error || 'Invalid email or password');
+      console.error('Login failed:', error);
     }
   };
 
   const handleClk = () => {
-    navigate("/signup");
+    navigate('/signup');
   };
 
   const handleForgotClk = () => {
-    navigate("/forgot");
+    navigate('/forgot');
   };
 
   return (
     <Box
-    sx={{
-      backgroundImage: 'url(./background.png)',
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    }}
-  >
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
+      sx={{
+        backgroundImage: 'url(./background.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
         <Container
           component="main"
           maxWidth="xs"
@@ -103,19 +117,31 @@ const onSubmit = async (data) => { // Log the submitted data
                 alt="logo"
                 style={{ width: 60, marginRight: 10 }}
               />
-              <Typography variant="h6" sx={{ color: '#a80000', fontWeight: 'bold' }}>
+              <Typography
+                variant="h6"
+                sx={{ color: '#a80000', fontWeight: 'bold' }}
+              >
                 Gd Player
               </Typography>
             </Box>
 
             {/* Login Form */}
-            <Typography component="h1" variant="h5" sx={{ marginBottom: 2, fontWeight: 800 }}>
+            <Typography
+              component="h1"
+              variant="h5"
+              sx={{ marginBottom: 2, fontWeight: 800 }}
+            >
               Sign In
             </Typography>
             <Typography variant="body2" sx={{ marginBottom: 2 }}>
-            Welcome, please sign in to continue
+              Welcome, please sign in to continue
             </Typography>
-            <Box component="form" noValidate sx={{ width: '100%' }} onSubmit={handleSubmit(onSubmit)}>
+            <Box
+              component="form"
+              noValidate
+              sx={{ width: '100%' }}
+              onSubmit={handleSubmit(onSubmit)}
+            >
               <Controller
                 name="email"
                 control={control}
@@ -137,7 +163,11 @@ const onSubmit = async (data) => { // Log the submitted data
                     label="Email or Phone Number"
                     autoComplete="username"
                     autoFocus
-                    sx={{ backgroundColor: '#333', borderRadius: 1, input: { color: '#ffffff' } }}
+                    sx={{
+                      backgroundColor: '#333',
+                      borderRadius: 1,
+                      input: { color: '#ffffff' },
+                    }}
                     error={!!errors.email}
                     helperText={errors.email?.message}
                   />
@@ -165,14 +195,21 @@ const onSubmit = async (data) => { // Log the submitted data
                     type="password"
                     id="password"
                     autoComplete="current-password"
-                    sx={{ backgroundColor: '#333', borderRadius: 1, input: { color: '#ffffff' } }}
+                    sx={{
+                      backgroundColor: '#333',
+                      borderRadius: 1,
+                      input: { color: '#ffffff' },
+                    }}
                     error={!!errors.password}
                     helperText={errors.password?.message}
                   />
                 )}
               />
               {error && (
-                <Typography color="error" sx={{ textAlign: 'center', color: '#a80000'}}>
+                <Typography
+                  color="error"
+                  sx={{ textAlign: 'center', color: '#a80000' }}
+                >
                   {error}
                 </Typography>
               )}
@@ -185,7 +222,15 @@ const onSubmit = async (data) => { // Log the submitted data
                 Login
               </Button>
               <Box sx={{ textAlign: 'right' }}>
-                <Link onClick={handleForgotClk} variant="body2" sx={{ color: '#ffffff', textDecoration: 'none', '&:hover': { color: '#a80000' } }}>
+                <Link
+                  onClick={handleForgotClk}
+                  variant="body2"
+                  sx={{
+                    color: '#ffffff',
+                    textDecoration: 'none',
+                    '&:hover': { color: '#a80000' },
+                  }}
+                >
                   Forgot Password?
                 </Link>
               </Box>
@@ -195,7 +240,15 @@ const onSubmit = async (data) => { // Log the submitted data
             <Box sx={{ marginTop: 3, textAlign: 'center' }}>
               <Typography variant="body2" sx={{ color: '#ffffff' }}>
                 New to Gd Player?{' '}
-                <Link onClick={handleClk} sx={{ color: '#ffffff', textDecoration: 'none', cursor: 'pointer', '&:hover': { color: '#a80000' } }}>
+                <Link
+                  onClick={handleClk}
+                  sx={{
+                    color: '#ffffff',
+                    textDecoration: 'none',
+                    cursor: 'pointer',
+                    '&:hover': { color: '#a80000' },
+                  }}
+                >
                   Sign up now
                 </Link>
               </Typography>
@@ -203,7 +256,10 @@ const onSubmit = async (data) => { // Log the submitted data
           </Paper>
 
           {/* Footer */}
-          <Typography variant="body2" sx={{ marginTop: 4, color: '#b3b3b3', textAlign: 'center' }}>
+          <Typography
+            variant="body2"
+            sx={{ marginTop: 4, color: '#b3b3b3', textAlign: 'center' }}
+          >
             &copy; 2025 Gd Player & Gd Enterprises. All rights reserved.
           </Typography>
         </Container>
@@ -211,6 +267,5 @@ const onSubmit = async (data) => { // Log the submitted data
     </Box>
   );
 };
-
 
 export default Login;

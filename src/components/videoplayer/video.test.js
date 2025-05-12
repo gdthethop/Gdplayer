@@ -28,14 +28,24 @@ describe('VideoPlayer Component', () => {
 
     const mockReducer = (state = initialState, action) => state;
 
-   store = configureStore({
-  reducer: mockReducer,
-});
+    store = configureStore({
+      reducer: mockReducer,
+    });
 
-    jest.spyOn(videoSlice, 'fetchVideoDetails').mockImplementation(() => ({ type: 'video/fetchVideoDetails' }));
-    jest.spyOn(videoSlice, 'fetchVideoDetailsByShortCode').mockImplementation(() => ({ type: 'video/fetchVideoDetailsByShortCode' }));
-    jest.spyOn(videoSlice, 'updateVideoViews').mockImplementation(() => ({ type: 'video/incrementViews' }));
-    jest.spyOn(videoSlice, 'updateVideoLikes').mockImplementation(() => ({ type: 'video/incrementLikes' }));
+    jest
+      .spyOn(videoSlice, 'fetchVideoDetails')
+      .mockImplementation(() => ({ type: 'video/fetchVideoDetails' }));
+    jest
+      .spyOn(videoSlice, 'fetchVideoDetailsByShortCode')
+      .mockImplementation(() => ({
+        type: 'video/fetchVideoDetailsByShortCode',
+      }));
+    jest
+      .spyOn(videoSlice, 'updateVideoViews')
+      .mockImplementation(() => ({ type: 'video/incrementViews' }));
+    jest
+      .spyOn(videoSlice, 'updateVideoLikes')
+      .mockImplementation(() => ({ type: 'video/incrementLikes' }));
   });
 
   it('renders video details when accessed by shortCode', async () => {

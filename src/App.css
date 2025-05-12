@@ -1,115 +1,115 @@
 /* Base Styles */
 .App {
-    height: 100vh;
-    position: relative;
-    overflow: hidden;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
 }
 
 /* Background Video */
 .background-video {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 /* Overlay */
 .overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
 }
 
 /* Main Content (Initially Hidden) */
 .content {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 2s ease-in-out;
-    background-image: url(../public/background.png);
-    background-size: cover;
-    background-position: center;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 2s ease-in-out;
+  background-image: url(../public/background.png);
+  background-size: cover;
+  background-position: center;
 }
 
 /* Fade-in Effect */
 .fade-in {
-    opacity: 1;
-    transition: opacity 2s ease-in-out;
+  opacity: 1;
+  transition: opacity 2s ease-in-out;
 }
 
 /* Logo */
 #logo {
-    width: 180px;
-    height: 180px;
+  width: 180px;
+  height: 180px;
 }
 
 /* Centered Heading */
 .head {
-    position: absolute;
-    top: 45%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-    color: white;
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: white;
 }
 
 /* Button Container */
 .but {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: absolute;
-    bottom: 5%;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 15px;
-    gap: 20px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  bottom: 5%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 15px;
+  gap: 20px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .head {
-        top: 40%;
-    }
+  .head {
+    top: 40%;
+  }
 
-    #logo {
-        width: 140px;
-        height: 140px;
-    }
+  #logo {
+    width: 140px;
+    height: 140px;
+  }
 
-    .but {
-        flex-direction: column;
-        width: 90%;
-        padding: 10px;
-        bottom: 3%;
-    }
+  .but {
+    flex-direction: column;
+    width: 90%;
+    padding: 10px;
+    bottom: 3%;
+  }
 }
 
 @media (max-width: 480px) {
-    .head {
-        top: 35%;
-    }
+  .head {
+    top: 35%;
+  }
 
-    #logo {
-        width: 120px;
-        height: 120px;
-    }
+  #logo {
+    width: 120px;
+    height: 120px;
+  }
 
-    .but {
-        flex-direction: row;
-        width: 100%;
-        bottom: 2%;
-        gap: 10px;
-    }
+  .but {
+    flex-direction: row;
+    width: 100%;
+    bottom: 2%;
+    gap: 10px;
+  }
 }

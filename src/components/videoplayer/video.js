@@ -29,7 +29,8 @@ const VideoPlayer = () => {
   const [hasDisliked, setHasDisliked] = useState(false);
 
   // Extract videoId from URL query params if available
-  const getQueryParam = (param) => new URLSearchParams(location.search).get(param);
+  const getQueryParam = (param) =>
+    new URLSearchParams(location.search).get(param);
   const videoIdFromQuery = getQueryParam('videoId');
 
   const {
@@ -65,7 +66,7 @@ const VideoPlayer = () => {
       console.error('No valid video ID or shortCode provided.');
     }
   }, [dispatch, shortCode, videoIdFromQuery]);
-const getCurrentVideoId = () => shortCode || videoIdFromQuery || videoId;
+  const getCurrentVideoId = () => shortCode || videoIdFromQuery || videoId;
 
   const handleLike = () => {
     if (!isUpdatingLikes) {
@@ -103,15 +104,32 @@ const getCurrentVideoId = () => shortCode || videoIdFromQuery || videoId;
     <Box sx={{ backgroundColor: 'black', color: 'white', minHeight: '100vh' }}>
       <Header />
       <Box sx={{ maxWidth: '90%', margin: 'auto', paddingTop: '100px' }}>
-        <Box sx={{ display: 'flex', gap: '20px', flexDirection: { xs: 'column', md: 'row' } }}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: '20px',
+            flexDirection: { xs: 'column', md: 'row' },
+          }}
+        >
           <Box sx={{ flex: 2 }}>
             {status === 'loading' ? (
-              <Typography sx={{ fontSize: '18px', color: 'gray' }}>Loading video...</Typography>
+              <Typography sx={{ fontSize: '18px', color: 'gray' }}>
+                Loading video...
+              </Typography>
             ) : error ? (
-              <Typography sx={{ fontSize: '18px', color: 'red' }}>Error: {error}</Typography>
+              <Typography sx={{ fontSize: '18px', color: 'red' }}>
+                Error: {error}
+              </Typography>
             ) : videoUrl ? (
               <>
-                <Box sx={{ width: '100%', height: '400px', borderRadius: '10px', overflow: 'hidden' }}>
+                <Box
+                  sx={{
+                    width: '100%',
+                    height: '400px',
+                    borderRadius: '10px',
+                    overflow: 'hidden',
+                  }}
+                >
                   <video
                     ref={videoRef}
                     controls
@@ -129,21 +147,46 @@ const getCurrentVideoId = () => shortCode || videoIdFromQuery || videoId;
                   </video>
                 </Box>
 
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '30px', alignItems: 'center' }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginTop: '30px',
+                    alignItems: 'center',
+                  }}
+                >
                   <Typography sx={{ fontSize: '16px', color: '#aaaaaa' }}>
                     Views: {videoViews}
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography sx={{ fontSize: '16px', color: '#aaaaaa', marginRight: '10px' }}>
+                    <Typography
+                      sx={{
+                        fontSize: '16px',
+                        color: '#aaaaaa',
+                        marginRight: '10px',
+                      }}
+                    >
                       {videoLikes} Likes
                     </Typography>
-                    <IconButton onClick={handleLike} sx={{ color: hasLiked ? 'blue' : 'white' }}>
+                    <IconButton
+                      onClick={handleLike}
+                      sx={{ color: hasLiked ? 'blue' : 'white' }}
+                    >
                       <ThumbUpIcon />
                     </IconButton>
-                    <Typography sx={{ fontSize: '16px', color: '#aaaaaa', marginRight: '10px' }}>
+                    <Typography
+                      sx={{
+                        fontSize: '16px',
+                        color: '#aaaaaa',
+                        marginRight: '10px',
+                      }}
+                    >
                       {videoDislikes} Dislikes
                     </Typography>
-                    <IconButton onClick={handleDislike} sx={{ color: hasDisliked ? 'blue' : 'white' }}>
+                    <IconButton
+                      onClick={handleDislike}
+                      sx={{ color: hasDisliked ? 'blue' : 'white' }}
+                    >
                       <ThumbDownIcon />
                     </IconButton>
                     <IconButton sx={{ color: 'white' }}>
@@ -152,10 +195,19 @@ const getCurrentVideoId = () => shortCode || videoIdFromQuery || videoId;
                   </Box>
                 </Box>
 
-                <Typography variant="h2" sx={{ fontSize: '24px', fontWeight: 'bold', marginTop: '20px' }}>
+                <Typography
+                  variant="h2"
+                  sx={{
+                    fontSize: '24px',
+                    fontWeight: 'bold',
+                    marginTop: '20px',
+                  }}
+                >
                   {videoTitle}
                 </Typography>
-                <Typography sx={{ fontSize: '16px', color: '#aaaaaa', marginTop: '10px' }}>
+                <Typography
+                  sx={{ fontSize: '16px', color: '#aaaaaa', marginTop: '10px' }}
+                >
                   {videoDescription}
                 </Typography>
 
@@ -180,10 +232,20 @@ const getCurrentVideoId = () => shortCode || videoIdFromQuery || videoId;
               borderRadius: '10px',
             }}
           >
-            <Typography variant="h3" sx={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '20px' }}>
+            <Typography
+              variant="h3"
+              sx={{
+                fontSize: '20px',
+                fontWeight: 'bold',
+                marginBottom: '20px',
+              }}
+            >
               Recommended Videos
             </Typography>
-            <Recommendation currentVideoId={getCurrentVideoId()} currentVideoShortCode={shortCode} />
+            <Recommendation
+              currentVideoId={getCurrentVideoId()}
+              currentVideoShortCode={shortCode}
+            />
           </Box>
         </Box>
       </Box>

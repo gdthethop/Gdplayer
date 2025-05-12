@@ -1,7 +1,10 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-// Define the initial state
+/**
+ * Initial state for video slice.
+ * Contains video metadata and status/error info.
+ */
 const initialState = {
   videoUrl: '',
   videoTitle: '',
@@ -16,51 +19,98 @@ const initialState = {
   error: null,
 };
 
-// Create async thunks for API calls
-export const fetchVideoDetails = createAsyncThunk('video/fetchVideoDetails', async (id) => {
-  const response = await axios.get(`https://gdbackend.onrender.com/api/videos/${id}`);
-  return response.data;
-});
+/**
+ * Async thunk to fetch video details by ID.
+ * Sends GET request to backend video details endpoint.
+ */
+export const fetchVideoDetails = createAsyncThunk(
+  'video/fetchVideoDetails',
+  async (id) => {
+    const response = await axios.get(
+      `${process.env.REACT_APP_BACKEND_URL}/api/videos/${id}`
+    );
+    return response.data;
+  }
+);
 
+/**
+ * Async thunk to fetch video details by short code.
+ * Sends GET request to backend video short code endpoint.
+ */
 export const fetchVideoDetailsByShortCode = createAsyncThunk(
   'video/fetchVideoDetailsByShortCode',
   async (shortCode) => {
-    const response = await axios.get(`https://gdbackend.onrender.com/api/videos/short/${shortCode}`);
+    const response = await axios.get(
+      `${process.env.REACT_APP_BACKEND_URL}/api/videos/short/${shortCode}`
+    );
     return response.data;
   }
 );
 
+/**
+ * Async thunk to update video views count.
+ * Sends PATCH request to increment views endpoint.
+ */
 export const updateVideoViews = createAsyncThunk(
   'video/updateVideoViews',
   async (id) => {
-    const response = await axios.patch(`https://gdbackend.onrender.com/api/videos/${id}/incrementViews`);
+    const response = await axios.patch(
+      `${process.env.REACT_APP_BACKEND_URL}/api/videos/${id}/incrementViews`
+    );
     return response.data;
   }
 );
 
-export const submitComment = createAsyncThunk('video/submitComment', async (commentData) => {
-  const response = await axios.post('https://gdbackend.onrender.com/api/videos/comment', commentData);
-  return response.data;
-});
+/**
+ * Async thunk to submit a comment on a video.
+ * Sends POST request to backend comment endpoint.
+ */
+export const submitComment = createAsyncThunk(
+  'video/submitComment',
+  async (commentData) => {
+    const response = await axios.post(
+      `${process.env.REACT_APP_BACKEND_URL}/api/videos/comment`,
+      commentData
+    );
+    return response.data;
+  }
+);
 
-// Slice to handle actions
+/**
+ * Video slice to manage video-related state.
+ * Includes reducers for likes/dislikes and extraReducers for async thunks.
+ */
 const videoSlice = createSlice({
   name: 'video',
   initialState,
   reducers: {
-    // Reducers to handle local state for likes and dislikes
+    /**
+     * Increment video likes count.
+     */
     incrementVideoLikes: (state) => {
       state.videoLikes += 1;
     },
+    /**
+     * Decrement video likes count.
+     */
     decrementVideoLikes: (state) => {
       state.videoLikes -= 1;
     },
+    /**
+     * Update video likes count with a specific value.
+     */
     updateVideoLikes: (state, action) => {
       state.videoLikes = action.payload;
-    }, // Add this action
+    },
+    /**
+     * Increment video dislikes count.
+     */
     incrementVideoDislikes: (state) => {
       state.videoDislikes += 1;
     },
+    /**
+     * Decrement video dislikes count.
+     */
     decrementVideoDislikes: (state) => {
       state.videoDislikes -= 1;
     },
@@ -89,14 +139,18 @@ const videoSlice = createSlice({
   },
 });
 
-// Export the actions
+/**
+ * Export video slice actions.
+ */
 export const {
   incrementVideoLikes,
   decrementVideoLikes,
-  updateVideoLikes, // Add this to the exports
+  updateVideoLikes,
   incrementVideoDislikes,
   decrementVideoDislikes,
 } = videoSlice.actions;
 
-// Export the thunks and the slice reducer
+/**
+ * Export video slice reducer as default.
+ */
 export default videoSlice.reducer;

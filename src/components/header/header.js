@@ -6,9 +6,9 @@ import { useNavigate } from 'react-router-dom';
 
 const Header = () => {
   const navigate = useNavigate();
-  const handelClk =() => {
-    navigate("/home");
-}
+  const handelClk = () => {
+    navigate('/home');
+  };
   return (
     <Box
       sx={{
@@ -53,8 +53,8 @@ const Header = () => {
             fontSize: '22px',
             fontWeight: 900,
             color: 'white',
-            cursor:'default',
-            display: { xs: 'none', md: 'block' } // Show on mobile
+            cursor: 'default',
+            display: { xs: 'none', md: 'block' }, // Show on mobile
           }}
           onClick={handelClk}
         >
@@ -67,17 +67,17 @@ const Header = () => {
         sx={{
           display: 'flex', // Keep visible on mobile
           alignItems: 'center',
-          gap : '2rem',
+          gap: '2rem',
           marginRight: '5rem',
           height: 'auto', // Set height for desktop view
           '@media (max-width: 600px)': {
-              gap: '1rem', // Smaller size for mobile
-              marginRight: '2rem'
-            },
+            gap: '1rem', // Smaller size for mobile
+            marginRight: '2rem',
+          },
         }}
       >
         <SearchComponent />
-        <AccountContainer/>
+        <AccountContainer />
       </Box>
     </Box>
   );

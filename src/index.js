@@ -1,4 +1,3 @@
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
@@ -17,53 +16,52 @@ import Home from './components/home/home';
 import UploadVideo from './components/UploadVideo';
 import PrivateRoute from './components/PrivateRoute';
 
-
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <Provider store={store}>
       <ErrorBoundary>
-      <HashRouter>
-        <Routes>
-          <Route path="/" element={<App />} />
-          <Route
-            path="/home"
-            element={
-              <PrivateRoute>
-                <Home />
-              </PrivateRoute>
-            }
-          />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/forgot" element={<ForgotPassword />} />
-          <Route
-            path="/video"
-            element={
-              <PrivateRoute>
-                <VideoPlayer />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/video/:shortCode"
-            element={
-              <PrivateRoute>
-                <VideoPlayer />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/gd"
-            element={
-              <PrivateRoute>
-                <UploadVideo />
-              </PrivateRoute>
-            }
-          />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </HashRouter>
+        <HashRouter>
+          <Routes>
+            <Route path="/" element={<App />} />
+            <Route
+              path="/home"
+              element={
+                <PrivateRoute>
+                  <Home />
+                </PrivateRoute>
+              }
+            />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/forgot" element={<ForgotPassword />} />
+            <Route
+              path="/video"
+              element={
+                <PrivateRoute>
+                  <VideoPlayer />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/video/:shortCode"
+              element={
+                <PrivateRoute>
+                  <VideoPlayer />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/gd"
+              element={
+                <PrivateRoute>
+                  <UploadVideo />
+                </PrivateRoute>
+              }
+            />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </HashRouter>
       </ErrorBoundary>
     </Provider>
   </React.StrictMode>

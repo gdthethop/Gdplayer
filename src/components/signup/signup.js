@@ -1,6 +1,15 @@
 import React from 'react';
 import { useDispatch } from 'react-redux';
-import { Container, Typography, TextField, Button, Box, Link, CssBaseline, Paper } from '@mui/material';
+import {
+  Container,
+  Typography,
+  TextField,
+  Button,
+  Box,
+  Link,
+  CssBaseline,
+  Paper,
+} from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
@@ -24,7 +33,12 @@ const theme = createTheme({
 });
 
 const Signup = () => {
-  const { control, handleSubmit, formState: { errors }, watch } = useForm();
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    watch,
+  } = useForm();
   const [error, setError] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const dispatch = useDispatch();
@@ -36,10 +50,18 @@ const Signup = () => {
     setError('');
     setLoading(true);
     try {
-      await dispatch(signupUser({ name: data.name, email: data.email, password: data.password })).unwrap();
+      await dispatch(
+        signupUser({
+          name: data.name,
+          email: data.email,
+          password: data.password,
+        })
+      ).unwrap();
       navigate('/');
     } catch (error) {
-      setError(error.response?.data?.error || 'Signup failed. Please try again.');
+      setError(
+        error.response?.data?.error || 'Signup failed. Please try again.'
+      );
       console.error('Signup failed:', error);
     } finally {
       setLoading(false);
@@ -106,13 +128,22 @@ const Signup = () => {
             </Box>
 
             {/* Signup Form */}
-            <Typography component="h1" variant="h5" sx={{ marginBottom: 2, fontWeight: 800 }}>
+            <Typography
+              component="h1"
+              variant="h5"
+              sx={{ marginBottom: 2, fontWeight: 800 }}
+            >
               Sign Up
             </Typography>
             <Typography variant="body2" sx={{ marginBottom: 2 }}>
               Please fill in this form to create an account.
             </Typography>
-            <Box component="form" noValidate sx={{ width: '100%' }} onSubmit={handleSubmit(onSubmit)}>
+            <Box
+              component="form"
+              noValidate
+              sx={{ width: '100%' }}
+              onSubmit={handleSubmit(onSubmit)}
+            >
               <Controller
                 name="name"
                 control={control}
@@ -128,7 +159,11 @@ const Signup = () => {
                     label="Name"
                     autoComplete="name"
                     autoFocus
-                    sx={{ backgroundColor: '#333', borderRadius: 1, input: { color: '#ffffff' } }}
+                    sx={{
+                      backgroundColor: '#333',
+                      borderRadius: 1,
+                      input: { color: '#ffffff' },
+                    }}
                     error={!!errors.name}
                     helperText={errors.name?.message}
                   />
@@ -154,7 +189,11 @@ const Signup = () => {
                     id="email"
                     label="Email"
                     autoComplete="email"
-                    sx={{ backgroundColor: '#333', borderRadius: 1, input: { color: '#ffffff' } }}
+                    sx={{
+                      backgroundColor: '#333',
+                      borderRadius: 1,
+                      input: { color: '#ffffff' },
+                    }}
                     error={!!errors.email}
                     helperText={errors.email?.message}
                   />
@@ -182,7 +221,11 @@ const Signup = () => {
                     type="password"
                     id="password"
                     autoComplete="new-password"
-                    sx={{ backgroundColor: '#333', borderRadius: 1, input: { color: '#ffffff' } }}
+                    sx={{
+                      backgroundColor: '#333',
+                      borderRadius: 1,
+                      input: { color: '#ffffff' },
+                    }}
                     error={!!errors.password}
                     helperText={errors.password?.message}
                   />
@@ -194,7 +237,7 @@ const Signup = () => {
                 defaultValue=""
                 rules={{
                   required: 'Confirm Password is required',
-                  validate: value =>
+                  validate: (value) =>
                     value === password || 'Passwords do not match',
                 }}
                 render={({ field }) => (
@@ -208,14 +251,21 @@ const Signup = () => {
                     type="password"
                     id="confirm_password"
                     autoComplete="new-password"
-                    sx={{ backgroundColor: '#333', borderRadius: 1, input: { color: '#ffffff' } }}
+                    sx={{
+                      backgroundColor: '#333',
+                      borderRadius: 1,
+                      input: { color: '#ffffff' },
+                    }}
                     error={!!errors.confirmPassword}
                     helperText={errors.confirmPassword?.message}
                   />
                 )}
               />
               {error && (
-                <Typography color="error" sx={{ textAlign: 'center', color: '#a80000' }}>
+                <Typography
+                  color="error"
+                  sx={{ textAlign: 'center', color: '#a80000' }}
+                >
                   {error}
                 </Typography>
               )}
