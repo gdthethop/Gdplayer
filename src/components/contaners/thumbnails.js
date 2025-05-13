@@ -10,7 +10,7 @@ import {
 import { useNavigate } from 'react-router-dom'; // useNavigate for React Router v6
 import Skeleton from '@mui/material/Skeleton';
 
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}api/videos`;
+const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api/videos`;
 
 // CategoriesContainer component
 const CategoriesContainer = () => {

@@ -25,7 +25,7 @@ const UploadVideo = () => {
 
     try {
       const response = await axios.post(
-        '${process.env.REACT_APP_BACKEND_URL}api/videos/upload',
+        `${process.env.REACT_APP_BACKEND_URL}/api/videos/upload`,
         videoData
       );
       alert(response.data.message);

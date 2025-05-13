@@ -3,7 +3,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   fetchVideoDetails,
   fetchVideoDetailsByShortCode,
-  updateVideoViews,
+  updateVideoViewsById,
+  updateVideoViewsByShortCode,
   updateVideoLikes,
   incrementVideoLikes,
   decrementVideoLikes,
@@ -95,10 +96,10 @@ const VideoPlayer = () => {
   useEffect(() => {
     if (shortCode) {
       dispatch(fetchVideoDetailsByShortCode(shortCode));
-      dispatch(updateVideoViews(shortCode));
+      dispatch(updateVideoViewsByShortCode(shortCode));
     } else if (videoIdFromQuery) {
       dispatch(fetchVideoDetails(videoIdFromQuery));
-      dispatch(updateVideoViews(videoIdFromQuery));
+      dispatch(updateVideoViewsById(videoIdFromQuery));
     } else {
       console.error('No valid video ID or shortCode provided.');
     }

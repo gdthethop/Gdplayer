@@ -10,7 +10,7 @@ import Skeleton from '@mui/material/Skeleton';
 
 const API_URL =
   process.env.REACT_APP_API_URL ||
-  `${process.env.REACT_APP_BACKEND_URL}api/videos`;
+  `${process.env.REACT_APP_BACKEND_URL}/api/videos`;
 
 const Recommendation = ({ currentVideoId, currentVideoShortCode }) => {
   const [videos, setVideos] = useState([]);

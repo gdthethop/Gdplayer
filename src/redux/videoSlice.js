@@ -48,14 +48,28 @@ export const fetchVideoDetailsByShortCode = createAsyncThunk(
 );
 
 /**
- * Async thunk to update video views count.
- * Sends PATCH request to increment views endpoint.
+ * Async thunk to update video views count by ID.
+ * Sends PATCH request to increment views endpoint by video ID.
  */
-export const updateVideoViews = createAsyncThunk(
-  'video/updateVideoViews',
+export const updateVideoViewsById = createAsyncThunk(
+  'video/updateVideoViewsById',
   async (id) => {
     const response = await axios.patch(
       `${process.env.REACT_APP_BACKEND_URL}/api/videos/${id}/incrementViews`
+    );
+    return response.data;
+  }
+);
+
+/**
+ * Async thunk to update video views count by shortCode.
+ * Sends PATCH request to increment views endpoint by shortCode.
+ */
+export const updateVideoViewsByShortCode = createAsyncThunk(
+  'video/updateVideoViewsByShortCode',
+  async (shortCode) => {
+    const response = await axios.patch(
+      `${process.env.REACT_APP_BACKEND_URL}/api/videos/short/${shortCode}/incrementViews`
     );
     return response.data;
   }
@@ -133,7 +147,10 @@ const videoSlice = createSlice({
         state.videoLikes = action.payload.likes;
         state.videoDislikes = action.payload.dislikes;
       })
-      .addCase(updateVideoViews.fulfilled, (state, action) => {
+      .addCase(updateVideoViewsById.fulfilled, (state, action) => {
+        state.videoViews = action.payload.views;
+      })
+      .addCase(updateVideoViewsByShortCode.fulfilled, (state, action) => {
         state.videoViews = action.payload.views;
       });
   },
