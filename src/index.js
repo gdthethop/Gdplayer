@@ -20,6 +20,7 @@ import UploadVideo from './components/UploadVideo';
 import PrivateRoute from './components/PrivateRoute';
 import SearchPage from './components/search/SearchPage';
 import Profile from './components/acount/Profile';
+import ResetPassword from './components/forgot/ResetPassword';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -42,6 +43,10 @@ root.render(
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/forgot" element={<ForgotPassword />} />
+              <Route
+                path="/reset-password/:token"
+                element={<ResetPassword />}
+              />
               <Route
                 path="/video"
                 element={

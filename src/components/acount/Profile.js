@@ -9,9 +9,10 @@ import {
   Paper,
 } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
-import { updateUserProfile } from '../../redux/authSlice';
+import { updateUserProfileAsync } from '../../redux/authSlice';
 import { useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { CircularProgress, Snackbar, Alert } from '@mui/material';
 
 // Mock set of Netflix-ish avatars
 const AVATARS = [
@@ -58,21 +59,38 @@ const Profile = () => {
 
   const [name, setName] = useState(user?.name || '');
   const [selectedAvatar, setSelectedAvatar] = useState(
-    user?.profileIcon || AVATARS[0].url
+    user?.profileIcon ||
+      'https://i.pinimg.com/originals/bd/ee/4c/bdee4c328550aaf21aa9f43fd19e2136.png'
   );
+  const [saving, setSaving] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
     if (user) {
       setName(user.name || '');
-      // If user has a profileIcon, ensure it's selected. If not, default to first.
-      setSelectedAvatar(user.profileIcon || AVATARS[0].url);
+      // If user has a profileIcon, ensure it's selected. If not, default to red avatar
+      setSelectedAvatar(
+        user.profileIcon ||
+          'https://i.pinimg.com/originals/bd/ee/4c/bdee4c328550aaf21aa9f43fd19e2136.png'
+      );
     }
   }, [user]);
 
-  const handleSave = () => {
-    // Dispatch update action (we need to create this in authSlice)
-    dispatch(updateUserProfile({ name, profileIcon: selectedAvatar }));
-    navigate('/home');
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await dispatch(
+        updateUserProfileAsync({ name, profileIcon: selectedAvatar })
+      ).unwrap();
+      setShowSuccess(true);
+      setTimeout(() => {
+        navigate('/home');
+      }, 1500);
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCancel = () => {
@@ -231,6 +249,7 @@ const Profile = () => {
           <Button
             variant="contained"
             onClick={handleSave}
+            disabled={saving}
             sx={{
               backgroundColor: 'white',
               color: 'black',
@@ -240,11 +259,16 @@ const Profile = () => {
               '&:hover': { backgroundColor: '#c0c0c0' },
             }}
           >
-            Save
+            {saving ? (
+              <CircularProgress size={24} sx={{ color: 'black' }} />
+            ) : (
+              'Save'
+            )}
           </Button>
           <Button
             variant="outlined"
             onClick={handleCancel}
+            disabled={saving}
             sx={{
               color: '#8c8c8c',
               borderColor: '#8c8c8c',
@@ -258,6 +282,17 @@ const Profile = () => {
           </Button>
         </Box>
       </Paper>
+
+      <Snackbar
+        open={showSuccess}
+        autoHideDuration={1500}
+        onClose={() => setShowSuccess(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert severity="success" sx={{ width: '100%' }}>
+          Profile updated successfully!
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

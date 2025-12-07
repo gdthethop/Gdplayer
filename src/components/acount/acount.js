@@ -43,7 +43,7 @@ function AccountContainer() {
   // Get profile icon or use default
   const profileIcon =
     user?.profileIcon ||
-    'https://api.dicebear.com/7.x/adventurer/svg?seed=Felix';
+    'https://i.pinimg.com/originals/bd/ee/4c/bdee4c328550aaf21aa9f43fd19e2136.png';
 
   return (
     <Box>

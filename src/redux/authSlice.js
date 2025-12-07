@@ -56,6 +56,39 @@ export const loginUser = createAsyncThunk(
 );
 
 /**
+ * Async thunk to update user profile.
+ * Sends a PUT request to the backend update-profile endpoint.
+ * Returns updated user data on success.
+ * Rejects with error message on failure.
+ */
+export const updateUserProfileAsync = createAsyncThunk(
+  'auth/updateProfile',
+  async (profileData, { getState, rejectWithValue }) => {
+    try {
+      const state = getState();
+      const email = state.auth.user?.email;
+
+      if (!email) {
+        return rejectWithValue({ message: 'User email not found' });
+      }
+
+      const response = await axios.put(
+        `${process.env.REACT_APP_BACKEND_URL}/api/auth/update-profile`,
+        { ...profileData, email },
+        {
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+      return response.data.user;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || { message: 'Profile update failed' }
+      );
+    }
+  }
+);
+
+/**
  * Auth slice to manage authentication state.
  * Handles token, user info, status, and error state.
  * Includes logout reducer to clear auth data.
@@ -116,6 +149,18 @@ const authSlice = createSlice({
       .addCase(signupUser.rejected, (state, action) => {
         state.status = 'failed'; // Set status to 'failed' on error
         state.error = action.payload?.message || 'Signup failed';
+      })
+      .addCase(updateUserProfileAsync.pending, (state) => {
+        state.status = 'loading';
+      })
+      .addCase(updateUserProfileAsync.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.user = { ...state.user, ...action.payload };
+        localStorage.setItem('user', JSON.stringify(state.user));
+      })
+      .addCase(updateUserProfileAsync.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload?.message || 'Profile update failed';
       });
   },
 });
