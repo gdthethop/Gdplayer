@@ -3,15 +3,56 @@ import { Box, Typography, Button } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
-const HeroSection = () => {
+import { useNavigate } from 'react-router-dom';
+
+const HeroSection = ({ video }) => {
+  const navigate = useNavigate();
+
+  if (!video) {
+    return (
+      <Box
+        sx={{
+          height: '80vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#141414',
+        }}
+      >
+        <Typography variant="h5" color="white">
+          Loading Featured Video...
+        </Typography>
+      </Box>
+    );
+  }
+
+  // Helper to get thumbnail URL (reused logic or imported if possible, but simple enough to inline or assume full URL for now)
+  // Assuming video.thumbnail is the URL or we need to process it. Based on thumbnails.js, it might need processing if it's an objectstorage link.
+  // For safety, let's copy the helper or just use valid URL.
+  // "https://res.cloudinary.com/..." or similar. existing code usage suggests direct usage or simple replace.
+  const backgroundUrl =
+    video.thumbnail &&
+    video.thumbnail.includes('objectstorage') &&
+    video.thumbnail.endsWith('.mp4')
+      ? video.thumbnail.replace('.mp4', '-thumbnail.jpg')
+      : video.thumbnail ||
+        'https://assets.nflxext.com/ffe/siteui/vlv3/c38a2d52-138e-48a3-ab68-36787ece46b3/eeb03fc9-99bf-4188-84aa-23605eb75bc7/IN-en-20240101-popsignuptwoweeks-perspective_alpha_website_large.jpg';
+
+  const handlePlay = () => {
+    if (video.shortCode) {
+      navigate(`/video/${encodeURIComponent(video.shortCode)}`);
+    } else {
+      navigate(`/video/${encodeURIComponent(video._id)}`);
+    }
+  };
+
   return (
     <Box
       sx={{
         position: 'relative',
         height: '80vh', // Occupy significant screen height
         width: '100%',
-        backgroundImage:
-          'url(https://assets.nflxext.com/ffe/siteui/vlv3/c38a2d52-138e-48a3-ab68-36787ece46b3/eeb03fc9-99bf-4188-84aa-23605eb75bc7/IN-en-20240101-popsignuptwoweeks-perspective_alpha_website_large.jpg)', // Placeholder Netflix-like background
+        backgroundImage: `url(${backgroundUrl})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         display: 'flex',
@@ -42,9 +83,10 @@ const HeroSection = () => {
             fontWeight: 900,
             marginBottom: '1rem',
             textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+            color: 'white',
           }}
         >
-          Featured Title
+          {video.title}
         </Typography>
         <Typography
           variant="h5"
@@ -52,16 +94,17 @@ const HeroSection = () => {
             marginBottom: '2rem',
             textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
             fontSize: { xs: '1rem', md: '1.2rem' },
+            color: 'white',
           }}
         >
-          This is a brief description of the featured movie or show. It captures
-          the user's attention and encourages them to watch.
+          {video.description}
         </Typography>
         <Box sx={{ display: 'flex', gap: '1rem' }}>
           <Button
             variant="contained"
             color="secondary"
             startIcon={<PlayArrowIcon />}
+            onClick={handlePlay}
             sx={{
               backgroundColor: 'white',
               color: 'black',

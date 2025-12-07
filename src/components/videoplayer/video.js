@@ -23,15 +23,28 @@ import Recommendation from '../recomendations/recomendation';
 import { useParams, useLocation } from 'react-router-dom';
 import Hls from 'hls.js';
 
+import CustomControls from './CustomControls';
+
 const VideoPlayer = () => {
   const dispatch = useDispatch();
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
+  const videoContainerRef = useRef(null); // Ref for fullscreen
   const { shortCode } = useParams();
   const location = useLocation();
 
   const [hasLiked, setHasLiked] = useState(false);
   const [hasDisliked, setHasDisliked] = useState(false);
+
+  // Custom Player State
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(false); // Start unmuted
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showControls, setShowControls] = useState(false);
+  const [isSeeking, setIsSeeking] = useState(false);
 
   // Extract videoId from URL query params if available
   const getQueryParam = (param) =>
@@ -52,46 +65,171 @@ const VideoPlayer = () => {
     isUpdatingDislikes,
   } = useSelector((state) => state.video);
 
-  useEffect(() => {
-    if (!videoUrl) return;
-
-    if (hlsRef.current) {
-      hlsRef.current.destroy();
-      hlsRef.current = null;
-    }
-
-    if (
-      videoRef.current &&
-      !videoUrl.startsWith('https://player.cloudinary.com/embed/')
-    ) {
-      // Only initialize hls.js if not a Cloudinary embed URL
-      const isHlsStream =
-        videoUrl.includes('.m3u8') || videoUrl.includes('cloudinary.com');
-
-      if (Hls.isSupported() && isHlsStream) {
-        const hls = new Hls();
-        hlsRef.current = hls;
-        hls.loadSource(videoUrl);
-        hls.attachMedia(videoRef.current);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          videoRef.current.play();
-        });
-        hls.on(Hls.Events.ERROR, (event, data) => {
-          console.error('HLS.js error:', data);
-        });
-      } else if (
-        videoRef.current.canPlayType('application/vnd.apple.mpegurl')
-      ) {
-        videoRef.current.src = videoUrl;
-        videoRef.current.addEventListener('loadedmetadata', () => {
-          videoRef.current.play();
-        });
-      } else {
-        videoRef.current.src = videoUrl;
-        videoRef.current.load();
+  // Helper to convert Cloudinary embed URL to direct MP4 URL
+  const getDirectVideoUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('https://player.cloudinary.com/embed/')) {
+      try {
+        const urlObj = new URL(url);
+        const publicId = urlObj.searchParams.get('public_id');
+        const cloudName = urlObj.searchParams.get('cloud_name');
+        if (publicId && cloudName) {
+          return `https://res.cloudinary.com/${cloudName}/video/upload/${publicId}.mp4`;
+        }
+      } catch (e) {
+        console.error('Error parsing Cloudinary URL:', e);
       }
     }
-  }, [videoUrl]);
+    return url;
+  };
+
+  const processedVideoUrl = getDirectVideoUrl(videoUrl);
+
+  // --- Handlers ---
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (videoRef.current.paused) {
+        videoRef.current.play();
+        setIsPlaying(true);
+      } else {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      }
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    // formatting issue if seeking, don't update
+    if (!isSeeking && videoRef.current) {
+      setCurrentTime(videoRef.current.currentTime);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration);
+      setVolume(videoRef.current.volume);
+      setIsMuted(videoRef.current.muted);
+    }
+  };
+
+  const handleSeek = (e, newValue) => {
+    setCurrentTime(newValue);
+  };
+
+  const handleSeekMouseDown = () => {
+    setIsSeeking(true);
+  };
+
+  const handleSeekMouseUp = (e, newValue) => {
+    setIsSeeking(false);
+    if (videoRef.current) {
+      videoRef.current.currentTime = newValue;
+    }
+  };
+
+  const handleVolumeChange = (e, newValue) => {
+    setVolume(newValue);
+    if (videoRef.current) {
+      videoRef.current.volume = newValue;
+      videoRef.current.muted = newValue === 0;
+      setIsMuted(newValue === 0);
+    }
+  };
+
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !videoRef.current.muted;
+      setIsMuted(videoRef.current.muted);
+      // If unmuting and volume was 0, set to default 1
+      if (!videoRef.current.muted && volume === 0) {
+        setVolume(1);
+        videoRef.current.volume = 1;
+      } else if (videoRef.current.muted) {
+        setVolume(0);
+      } else {
+        setVolume(videoRef.current.volume);
+      }
+    }
+  };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      if (videoContainerRef.current.requestFullscreen) {
+        videoContainerRef.current.requestFullscreen();
+      } else if (videoContainerRef.current.webkitRequestFullscreen) {
+        /* Safari */
+        videoContainerRef.current.webkitRequestFullscreen();
+      } else if (videoContainerRef.current.msRequestFullscreen) {
+        /* IE11 */
+        videoContainerRef.current.msRequestFullscreen();
+      }
+      setIsFullscreen(true);
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        /* Safari */
+        document.webkitExitFullscreen();
+      } else if (document.msExitFullscreen) {
+        /* IE11 */
+        document.msExitFullscreen();
+      }
+      setIsFullscreen(false);
+    }
+  };
+
+  // Listen for fullscreen change events (esc key)
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('msfullscreenchange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener(
+        'webkitfullscreenchange',
+        handleFullscreenChange
+      );
+      document.removeEventListener(
+        'mozfullscreenchange',
+        handleFullscreenChange
+      );
+      document.removeEventListener(
+        'msfullscreenchange',
+        handleFullscreenChange
+      );
+    };
+  }, []);
+
+  // Sync state on load/update
+  useEffect(() => {
+    if (videoRef.current) {
+      // Sync initial state if needed
+      setIsMuted(videoRef.current.muted);
+      // Auto play logic might start video, so check
+      const checkPlay = () => {
+        if (!videoRef.current.paused) setIsPlaying(true);
+      };
+      videoRef.current.addEventListener('play', () => setIsPlaying(true));
+      videoRef.current.addEventListener('pause', () => setIsPlaying(false));
+      return () => {
+        if (videoRef.current) {
+          videoRef.current.removeEventListener('play', () =>
+            setIsPlaying(true)
+          );
+          videoRef.current.removeEventListener('pause', () =>
+            setIsPlaying(false)
+          );
+        }
+      };
+    }
+  }, [processedVideoUrl]);
 
   const user = useSelector((state) => state.auth.user);
 
@@ -164,10 +302,13 @@ const VideoPlayer = () => {
               <Typography sx={{ fontSize: '18px', color: 'red' }}>
                 Error: {error}
               </Typography>
-            ) : videoUrl ? (
+            ) : processedVideoUrl ? (
               <>
                 {/* Video Player Container */}
                 <Box
+                  ref={videoContainerRef}
+                  onMouseEnter={() => setShowControls(true)}
+                  onMouseLeave={() => setShowControls(false)}
                   sx={{
                     width: '100%',
                     overflow: 'hidden',
@@ -176,37 +317,43 @@ const VideoPlayer = () => {
                     position: 'relative',
                   }}
                 >
-                  {videoUrl.startsWith(
-                    'https://player.cloudinary.com/embed/'
-                  ) ? (
-                    <iframe
-                      title="Cloudinary Video Player"
-                      src={videoUrl}
-                      width="100%"
-                      height="100%"
-                      frameBorder="0"
-                      allow="autoplay; fullscreen"
-                      allowFullScreen
-                      style={{ border: 'none' }}
-                    />
-                  ) : (
+                  <>
                     <video
                       ref={videoRef}
-                      controls
+                      onClick={togglePlay}
+                      onTimeUpdate={handleTimeUpdate}
+                      onLoadedMetadata={handleLoadedMetadata}
+                      onEnded={() => setIsPlaying(false)}
                       autoPlay
-                      muted
                       style={{
                         width: '100%',
                         height: '100%',
                         objectFit: 'contain',
                       }}
                     >
-                      {!videoUrl.includes('.m3u8') && (
-                        <source src={videoUrl} type="video/mp4" />
+                      {!processedVideoUrl.includes('.m3u8') && (
+                        <source src={processedVideoUrl} type="video/mp4" />
                       )}
                       Your browser does not support the video tag.
                     </video>
-                  )}
+
+                    <CustomControls
+                      onPlayPause={togglePlay}
+                      isPlaying={isPlaying}
+                      onSeek={handleSeek}
+                      onSeekMouseUp={handleSeekMouseUp}
+                      onSeekMouseDown={handleSeekMouseDown}
+                      currentTime={currentTime}
+                      duration={duration}
+                      onVolumeChange={handleVolumeChange}
+                      onMute={toggleMute}
+                      volume={volume}
+                      isMuted={isMuted}
+                      onFullscreen={toggleFullscreen}
+                      isFullscreen={isFullscreen}
+                      showControls={showControls}
+                    />
+                  </>
                 </Box>
 
                 {/* Video Title */}

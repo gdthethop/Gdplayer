@@ -13,13 +13,14 @@ import Skeleton from '@mui/material/Skeleton';
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api/videos`;
 
 // CategoriesContainer component
-const CategoriesContainer = () => {
-  const [categories, setCategories] = useState({});
-  const [loading, setLoading] = useState(true); // Add loading state
+const CategoriesContainer = ({ categories, loading }) => {
+  // const [categories, setCategories] = useState({});
+  // const [loading, setLoading] = useState(true); // Add loading state
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const trackRefs = useRef({});
 
+  /*
   useEffect(() => {
     const fetchData = async () => {
       const response = await fetch(API_URL);
@@ -50,6 +51,7 @@ const CategoriesContainer = () => {
 
     fetchData();
   }, []);
+  */
 
   return (
     <Box sx={{ padding: '30px', overflow: 'hidden' }}>
