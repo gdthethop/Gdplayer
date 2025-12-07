@@ -11,9 +11,11 @@ import {
   incrementVideoDislikes,
   decrementVideoDislikes,
 } from '../../redux/videoSlice';
-import { Box, Typography, IconButton } from '@mui/material';
+import { Box, Typography, Button, Grid } from '@mui/material';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import ThumbDownIcon from '@mui/icons-material/ThumbDown';
+import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
+import ThumbDownOutlinedIcon from '@mui/icons-material/ThumbDownOutlined';
 import ShareIcon from '@mui/icons-material/Share';
 import Header from '../header/header';
 import CommentSection from '../comment/comment';
@@ -139,17 +141,21 @@ const VideoPlayer = () => {
   };
 
   return (
-    <Box sx={{ backgroundColor: 'black', color: 'white', minHeight: '100vh' }}>
+    <Box
+      sx={{ backgroundColor: '#0f0f0f', color: 'white', minHeight: '100vh' }}
+    >
       <Header />
-      <Box sx={{ maxWidth: '90%', margin: 'auto', paddingTop: '100px' }}>
-        <Box
-          sx={{
-            display: 'flex',
-            gap: '20px',
-            flexDirection: { xs: 'column', md: 'row' },
-          }}
-        >
-          <Box sx={{ flex: 2 }}>
+      <Box
+        sx={{
+          maxWidth: '1600px',
+          margin: 'auto',
+          paddingTop: '80px',
+          paddingX: { xs: 2, md: 4 },
+        }}
+      >
+        <Grid container spacing={3}>
+          {/* Left Column: Video Player & Info */}
+          <Grid item xs={12} lg={8.5}>
             {status === 'loading' ? (
               <Typography sx={{ fontSize: '18px', color: 'gray' }}>
                 Loading video...
@@ -160,15 +166,19 @@ const VideoPlayer = () => {
               </Typography>
             ) : videoUrl ? (
               <>
-                {videoUrl.startsWith('https://player.cloudinary.com/embed/') ? (
-                  <Box
-                    sx={{
-                      width: '100%',
-                      height: '400px',
-                      borderRadius: '10px',
-                      overflow: 'hidden',
-                    }}
-                  >
+                {/* Video Player Container */}
+                <Box
+                  sx={{
+                    width: '100%',
+                    overflow: 'hidden',
+                    backgroundColor: 'black',
+                    aspectRatio: '16/9',
+                    position: 'relative',
+                  }}
+                >
+                  {videoUrl.startsWith(
+                    'https://player.cloudinary.com/embed/'
+                  ) ? (
                     <iframe
                       title="Cloudinary Video Player"
                       src={videoUrl}
@@ -177,18 +187,9 @@ const VideoPlayer = () => {
                       frameBorder="0"
                       allow="autoplay; fullscreen"
                       allowFullScreen
-                      style={{ borderRadius: '10px' }}
+                      style={{ border: 'none' }}
                     />
-                  </Box>
-                ) : (
-                  <Box
-                    sx={{
-                      width: '100%',
-                      height: '400px',
-                      borderRadius: '10px',
-                      overflow: 'hidden',
-                    }}
-                  >
+                  ) : (
                     <video
                       ref={videoRef}
                       controls
@@ -197,8 +198,7 @@ const VideoPlayer = () => {
                       style={{
                         width: '100%',
                         height: '100%',
-                        borderRadius: '10px',
-                        boxShadow: '0 6px 20px rgba(0, 0, 0, 0.8)',
+                        objectFit: 'contain',
                       }}
                     >
                       {!videoUrl.includes('.m3u8') && (
@@ -206,109 +206,157 @@ const VideoPlayer = () => {
                       )}
                       Your browser does not support the video tag.
                     </video>
-                  </Box>
-                )}
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    marginTop: '30px',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Typography sx={{ fontSize: '16px', color: '#aaaaaa' }}>
-                    Views: {videoViews}
-                  </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography
-                      sx={{
-                        fontSize: '16px',
-                        color: '#aaaaaa',
-                        marginRight: '10px',
-                      }}
-                    >
-                      {videoLikes} Likes
-                    </Typography>
-                    <IconButton
-                      onClick={handleLike}
-                      sx={{ color: hasLiked ? 'blue' : 'white' }}
-                    >
-                      <ThumbUpIcon />
-                    </IconButton>
-                    <Typography
-                      sx={{
-                        fontSize: '16px',
-                        color: '#aaaaaa',
-                        marginRight: '10px',
-                      }}
-                    >
-                      {videoDislikes} Dislikes
-                    </Typography>
-                    <IconButton
-                      onClick={handleDislike}
-                      sx={{ color: hasDisliked ? 'blue' : 'white' }}
-                    >
-                      <ThumbDownIcon />
-                    </IconButton>
-                    <IconButton sx={{ color: 'white' }}>
-                      <ShareIcon />
-                    </IconButton>
-                  </Box>
+                  )}
                 </Box>
 
+                {/* Video Title */}
                 <Typography
-                  variant="h2"
+                  variant="h1"
                   sx={{
-                    fontSize: '24px',
-                    fontWeight: 'bold',
-                    marginTop: '20px',
+                    fontSize: { xs: '18px', md: '22px' },
+                    fontWeight: 700,
+                    marginTop: '16px',
+                    lineHeight: 1.4,
                   }}
                 >
                   {videoTitle}
                 </Typography>
-                <Typography
-                  sx={{ fontSize: '16px', color: '#aaaaaa', marginTop: '10px' }}
-                >
-                  {videoDescription}
-                </Typography>
 
-                <CommentSection
-                  videoId={getCurrentVideoId()}
-                  userId={user?.id}
-                  name={user?.name}
-                />
+                {/* Metadata & Actions Row */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    justifyContent: 'space-between',
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    marginTop: '12px',
+                    gap: 2,
+                  }}
+                >
+                  {/* Views & Date (Placeholder for date) */}
+                  <Typography
+                    sx={{ fontSize: '14px', color: '#aaaaaa', fontWeight: 500 }}
+                  >
+                    {videoViews} views
+                  </Typography>
+
+                  {/* Action Buttons */}
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        backgroundColor: '#272727',
+                        borderRadius: '20px',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <Button
+                        onClick={handleLike}
+                        startIcon={
+                          hasLiked ? <ThumbUpIcon /> : <ThumbUpOutlinedIcon />
+                        }
+                        sx={{
+                          color: 'white',
+                          padding: '6px 16px',
+                          textTransform: 'none',
+                          borderRight: '1px solid #3f3f3f',
+                          borderRadius: 0,
+                          '&:hover': { backgroundColor: '#3f3f3f' },
+                        }}
+                      >
+                        {videoLikes}
+                      </Button>
+                      <Button
+                        onClick={handleDislike}
+                        startIcon={
+                          hasDisliked ? (
+                            <ThumbDownIcon />
+                          ) : (
+                            <ThumbDownOutlinedIcon />
+                          )
+                        }
+                        sx={{
+                          color: 'white',
+                          padding: '6px 16px',
+                          textTransform: 'none',
+                          borderRadius: 0,
+                          '&:hover': { backgroundColor: '#3f3f3f' },
+                        }}
+                      >
+                        {videoDislikes}
+                      </Button>
+                    </Box>
+
+                    <Button
+                      startIcon={<ShareIcon />}
+                      sx={{
+                        backgroundColor: '#272727',
+                        color: 'white',
+                        borderRadius: '20px',
+                        padding: '6px 16px',
+                        textTransform: 'none',
+                        '&:hover': { backgroundColor: '#3f3f3f' },
+                      }}
+                    >
+                      Share
+                    </Button>
+                  </Box>
+                </Box>
+
+                {/* Description Box */}
+                <Box
+                  sx={{
+                    backgroundColor: '#272727',
+                    borderRadius: '12px',
+                    padding: '12px',
+                    marginTop: '16px',
+                    '&:hover': { backgroundColor: '#3f3f3f' },
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: '14px',
+                      color: 'white',
+                      whiteSpace: 'pre-wrap',
+                    }}
+                  >
+                    {videoDescription}
+                  </Typography>
+                </Box>
+
+                {/* Comments Section */}
+                <Box sx={{ marginTop: '24px' }}>
+                  <Typography
+                    variant="h3"
+                    sx={{ fontSize: '20px', marginBottom: '16px' }}
+                  >
+                    Comments
+                  </Typography>
+                  <CommentSection
+                    videoId={getCurrentVideoId()}
+                    userId={user?.id}
+                    name={user?.name}
+                  />
+                </Box>
               </>
             ) : (
               <Typography sx={{ fontSize: '18px', color: 'red' }}>
                 Video URL is missing.
               </Typography>
             )}
-          </Box>
+          </Grid>
 
-          <Box
-            sx={{
-              flex: 1,
-              padding: '20px',
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              borderRadius: '10px',
-            }}
-          >
-            <Typography
-              variant="h3"
-              sx={{
-                fontSize: '20px',
-                fontWeight: 'bold',
-                marginBottom: '20px',
-              }}
-            >
-              Recommended Videos
-            </Typography>
-            <Recommendation
-              currentVideoId={getCurrentVideoId()}
-              currentVideoShortCode={shortCode}
-            />
-          </Box>
-        </Box>
+          {/* Right Column: Recommendations */}
+          <Grid item xs={12} lg={3.5}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Recommendation
+                currentVideoId={getCurrentVideoId()}
+                currentVideoShortCode={shortCode}
+              />
+            </Box>
+          </Grid>
+        </Grid>
       </Box>
     </Box>
   );

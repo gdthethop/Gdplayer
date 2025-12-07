@@ -182,13 +182,20 @@ const VideoCarousel = ({ videos, trackRef, dispatch, navigate }) => {
               }}
               sx={{
                 flex: '0 0 auto',
-                width: '300px',
-                height: '200px',
+                width: '280px', // Slightly smaller for better density
+                height: '158px', // 16:9 Aspect Ratio
                 position: 'relative',
-                transition: 'transform 0.3s ease-in-out',
-                '&:hover': { transform: 'scale(1.05)' },
+                transition:
+                  'transform 0.3s ease-in-out, z-index 0.3s ease-in-out',
+                '&:hover': {
+                  transform: 'scale(1.3)',
+                  zIndex: 10,
+                  boxShadow: '0 10px 20px rgba(0,0,0,0.8)',
+                },
                 textDecoration: 'none',
                 color: 'inherit',
+                borderRadius: '4px',
+                overflow: 'hidden',
               }}
             >
               <img
@@ -197,7 +204,7 @@ const VideoCarousel = ({ videos, trackRef, dispatch, navigate }) => {
                 style={{
                   width: '100%',
                   height: '100%',
-                  borderRadius: '10px',
+                  borderRadius: '4px',
                   objectFit: 'cover',
                 }}
                 onError={(e) => {

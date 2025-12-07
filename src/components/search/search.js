@@ -1,13 +1,25 @@
 import React, { useState } from 'react';
 import { Box, TextField, IconButton } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import { useNavigate } from 'react-router-dom';
 
 const SearchComponent = () => {
   const [isHovered, setIsHovered] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const navigate = useNavigate();
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchTerm)}`);
+    }
+  };
 
   return (
     <Box
+      component="form"
+      onSubmit={handleSearch}
       sx={{
         position: 'relative',
         width: isHovered || isFocused ? '300px' : '50px', // Adjusted width for mobile view
@@ -29,6 +41,8 @@ const SearchComponent = () => {
         placeholder="Search for a movie or TV show..."
         variant="outlined"
         size="small"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
         onFocus={() => setIsFocused(true)} // Keeps expanded on focus
         onBlur={() => {
           setIsFocused(false);
@@ -54,6 +68,7 @@ const SearchComponent = () => {
 
       {/* Search Button */}
       <IconButton
+        type="submit"
         sx={{
           position: 'absolute',
           top: '50%',

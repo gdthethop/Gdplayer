@@ -30,14 +30,14 @@ const Header = () => {
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          marginLeft: '1rem',
+          marginLeft: '2rem',
         }}
       >
         <img
           src={process.env.PUBLIC_URL + '/logo.png'}
           alt="logo"
           style={{
-            width: '60px', // Default size for desktop
+            width: '40px', // Default size for desktop
             height: 'auto',
             marginRight: '10px',
             '@media (max-width: 600px)': {
@@ -50,7 +50,7 @@ const Header = () => {
           component="a"
           variant="h1"
           sx={{
-            fontSize: '22px',
+            fontSize: '18px',
             fontWeight: 900,
             color: 'white',
             cursor: 'default',
@@ -67,8 +67,8 @@ const Header = () => {
         sx={{
           display: 'flex', // Keep visible on mobile
           alignItems: 'center',
-          gap: '2rem',
-          marginRight: '5rem',
+          gap: '1rem',
+          marginRight: '2rem',
           height: 'auto', // Set height for desktop view
           '@media (max-width: 600px)': {
             gap: '1rem', // Smaller size for mobile

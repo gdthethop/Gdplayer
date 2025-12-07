@@ -51,18 +51,36 @@ const Recommendation = ({ currentVideoId, currentVideoShortCode }) => {
     fetchData();
   }, [currentVideoId]);
   return (
-    <Box sx={{ padding: '30px' }}>
+    <Box sx={{ padding: { xs: '20px 0', md: '0 0 0 20px' } }}>
+      <Typography
+        variant="h6"
+        sx={{ color: 'white', marginBottom: '15px', fontWeight: 'bold' }}
+      >
+        Recommended
+      </Typography>
       {loading ? (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <Typography sx={{ color: '#ffffff' }}>Loading videos...</Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {[...Array(5)].map((_, index) => (
-            <Skeleton
-              key={index}
-              variant="rectangular"
-              width="100%"
-              height={200}
-              sx={{ bgcolor: 'grey.900' }}
-            />
+            <Box key={index} sx={{ display: 'flex', gap: '10px' }}>
+              <Skeleton
+                variant="rectangular"
+                width={168}
+                height={94}
+                sx={{ bgcolor: 'grey.900', borderRadius: '8px' }}
+              />
+              <Box sx={{ flex: 1 }}>
+                <Skeleton
+                  variant="text"
+                  width="80%"
+                  sx={{ bgcolor: 'grey.900' }}
+                />
+                <Skeleton
+                  variant="text"
+                  width="60%"
+                  sx={{ bgcolor: 'grey.900' }}
+                />
+              </Box>
+            </Box>
           ))}
         </Box>
       ) : error ? (
@@ -70,17 +88,9 @@ const Recommendation = ({ currentVideoId, currentVideoShortCode }) => {
       ) : (
         <Box
           sx={{
-            display: { xs: 'flex', md: 'flex' },
-            flexDirection: { xs: 'row', md: 'column' },
-            gap: '20px',
-            overflowX: { xs: 'auto', md: 'hidden' },
-            whiteSpace: { xs: 'nowrap', md: 'normal' },
-            paddingBottom: { xs: '10px', md: '0px' },
-            '&::-webkit-scrollbar': { height: '6px' },
-            '&::-webkit-scrollbar-thumb': {
-              background: '#aaa',
-              borderRadius: '10px',
-            },
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
           }}
         >
           {videos.map((video) => {
@@ -106,37 +116,38 @@ const Recommendation = ({ currentVideoId, currentVideoShortCode }) => {
                 }}
                 sx={{
                   display: 'flex',
-                  flexDirection: { xs: 'column', md: 'row' },
-                  alignItems: 'center',
+                  flexDirection: 'row',
+                  alignItems: 'flex-start',
                   textDecoration: 'none',
                   color: 'inherit',
-                  borderRadius: '10px',
-                  transition: 'transform 0.3s ease-in-out',
-                  '&:hover': { transform: 'scale(1.02)' },
-                  gap: '15px',
-                  flex: '0 0 auto',
-                  width: { xs: '320px', md: '100%' },
+                  cursor: 'pointer',
+                  gap: '8px',
+                  '&:hover .thumbnail': {
+                    transform: 'scale(1.05)',
+                  },
                 }}
               >
+                {/* Thumbnail Container */}
                 <Box
                   sx={{
-                    width: { xs: '100%', md: '250px' },
                     position: 'relative',
-                    paddingBottom: { xs: '56.25%', md: '29.9%' },
-                    borderRadius: '10px',
+                    minWidth: '168px',
+                    width: '168px',
+                    height: '94px',
+                    borderRadius: '8px',
                     overflow: 'hidden',
+                    flexShrink: 0,
                   }}
                 >
                   <img
+                    className="thumbnail"
                     src={imageUrl}
                     alt={video.title}
                     style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
                       width: '100%',
                       height: '100%',
                       objectFit: 'cover',
+                      transition: 'transform 0.2s ease-in-out',
                     }}
                     onError={(e) => {
                       e.target.src = '/fallback.jpg';
@@ -144,20 +155,32 @@ const Recommendation = ({ currentVideoId, currentVideoShortCode }) => {
                   />
                 </Box>
 
-                <Box sx={{ flex: 1, maxWidth: { xs: '100%', md: '500px' } }}>
+                {/* Video Info */}
+                <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Typography
-                    variant="h6"
-                    sx={{ fontSize: '16px', fontWeight: 'bold', color: '#fff' }}
+                    sx={{
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      color: '#fff',
+                      lineHeight: '1.2rem',
+                      maxHeight: '2.4rem',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      marginBottom: '4px',
+                    }}
                   >
                     {video.title}
                   </Typography>
                   <Typography sx={{ fontSize: '12px', color: '#aaaaaa' }}>
                     {Array.isArray(video.genres)
-                      ? video.genres.join(' | ')
-                      : video.genres}
+                      ? video.genres[0]
+                      : video.genres || 'Unknown'}
                   </Typography>
                   <Typography sx={{ fontSize: '12px', color: '#aaaaaa' }}>
-                    Views: {video.views}
+                    {video.views} views
                   </Typography>
                 </Box>
               </Box>
