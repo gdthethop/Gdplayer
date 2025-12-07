@@ -79,6 +79,13 @@ const authSlice = createSlice({
       localStorage.removeItem('token');
       localStorage.removeItem('user');
     },
+    /**
+     * Update user profile information (name, profileIcon, etc.)
+     */
+    updateUserProfile: (state, action) => {
+      state.user = { ...state.user, ...action.payload };
+      localStorage.setItem('user', JSON.stringify(state.user));
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -114,4 +121,4 @@ const authSlice = createSlice({
 });
 
 export default authSlice.reducer;
-export const { logoutUser } = authSlice.actions;
+export const { logoutUser, updateUserProfile } = authSlice.actions;

@@ -128,6 +128,22 @@ const videoSlice = createSlice({
     decrementVideoDislikes: (state) => {
       state.videoDislikes -= 1;
     },
+    /**
+     * Clear video details (reset to initial state).
+     */
+    clearVideoDetails: (state) => {
+      state.videoUrl = '';
+      state.videoTitle = '';
+      state.videoDescription = '';
+      state.videoThumbnail = '';
+      state.videoRuntime = '';
+      state.videoViews = 0;
+      state.videoGenres = '';
+      state.videoLikes = 0;
+      state.videoDislikes = 0;
+      state.status = 'idle';
+      state.error = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -165,6 +181,7 @@ export const {
   updateVideoLikes,
   incrementVideoDislikes,
   decrementVideoDislikes,
+  clearVideoDetails,
 } = videoSlice.actions;
 
 /**

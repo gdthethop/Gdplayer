@@ -19,6 +19,7 @@ import Home from './components/home/home';
 import UploadVideo from './components/UploadVideo';
 import PrivateRoute from './components/PrivateRoute';
 import SearchPage from './components/search/SearchPage';
+import Profile from './components/acount/Profile';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -70,6 +71,14 @@ root.render(
                 element={
                   <PrivateRoute>
                     <SearchPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <PrivateRoute>
+                    <Profile />
                   </PrivateRoute>
                 }
               />

@@ -10,6 +10,7 @@ import {
   decrementVideoLikes,
   incrementVideoDislikes,
   decrementVideoDislikes,
+  clearVideoDetails,
 } from '../../redux/videoSlice';
 import { Box, Typography, Button, Grid } from '@mui/material';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
@@ -209,23 +210,32 @@ const VideoPlayer = () => {
 
   // Sync state on load/update
   useEffect(() => {
+    // Reset state when video changes
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+    setShowControls(false); // Hide controls initially for new video
+
+    if (videoRef.current) {
+      videoRef.current.load(); // Explicitly load the new source
+    }
+  }, [processedVideoUrl]); // Trigger whenever the URL changes
+
+  useEffect(() => {
     if (videoRef.current) {
       // Sync initial state if needed
       setIsMuted(videoRef.current.muted);
-      // Auto play logic might start video, so check
-      const checkPlay = () => {
-        if (!videoRef.current.paused) setIsPlaying(true);
-      };
-      videoRef.current.addEventListener('play', () => setIsPlaying(true));
-      videoRef.current.addEventListener('pause', () => setIsPlaying(false));
+
+      const onPlay = () => setIsPlaying(true);
+      const onPause = () => setIsPlaying(false);
+
+      videoRef.current.addEventListener('play', onPlay);
+      videoRef.current.addEventListener('pause', onPause);
+
       return () => {
         if (videoRef.current) {
-          videoRef.current.removeEventListener('play', () =>
-            setIsPlaying(true)
-          );
-          videoRef.current.removeEventListener('pause', () =>
-            setIsPlaying(false)
-          );
+          videoRef.current.removeEventListener('play', onPlay);
+          videoRef.current.removeEventListener('pause', onPause);
         }
       };
     }
@@ -234,6 +244,9 @@ const VideoPlayer = () => {
   const user = useSelector((state) => state.auth.user);
 
   useEffect(() => {
+    // Clear previous video details immediately to prevent showing old content
+    dispatch(clearVideoDetails());
+
     if (shortCode) {
       dispatch(fetchVideoDetailsByShortCode(shortCode));
       dispatch(updateVideoViewsByShortCode(shortCode));
@@ -350,6 +363,7 @@ const VideoPlayer = () => {
                 >
                   <>
                     <video
+                      key={processedVideoUrl} // Force re-render when URL changes
                       ref={videoRef}
                       onClick={togglePlay}
                       onTimeUpdate={handleTimeUpdate}

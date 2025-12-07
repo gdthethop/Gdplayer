@@ -1,51 +1,129 @@
 import * as React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  AuthenticationContext,
-  SessionContext,
-} from '@toolpad/core/AppProvider';
-import { Account } from '@toolpad/core/Account';
 import { logoutUser } from '../../redux/authSlice';
 import { useNavigate } from 'react-router-dom';
-import { Box } from '@mui/material';
+import {
+  Box,
+  IconButton,
+  Menu,
+  MenuItem,
+  Avatar,
+  Typography,
+  Divider,
+} from '@mui/material';
+import PersonIcon from '@mui/icons-material/Person';
+import LogoutIcon from '@mui/icons-material/Logout';
 
 function AccountContainer() {
   const dispatch = useDispatch();
-  const user = useSelector((state) => state.auth.user); // Get user from Redux store
-  const [session, setSession] = React.useState(user ? { user } : null); // Initialize session with user
+  const user = useSelector((state) => state.auth.user);
   const navigate = useNavigate();
+  const [anchorEl, setAnchorEl] = React.useState(null);
+  const open = Boolean(anchorEl);
 
-  // Use useEffect to update session whenever user data changes
-  React.useEffect(() => {
-    setSession(user ? { user } : null); // Update session when Redux user state changes
-  }, [user]); // Dependency on `user` to re-render when it changes
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
 
-  const authentication = React.useMemo(
-    () => ({
-      signOut: () => {
-        setSession(null);
-        dispatch(logoutUser()); // Clear Redux state on sign out
-        navigate('/'); // Redirect to login page after sign out
-      },
-    }),
-    [dispatch]
-  );
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleViewProfile = () => {
+    handleClose();
+    navigate('/profile');
+  };
+
+  const handleSignOut = () => {
+    handleClose();
+    dispatch(logoutUser());
+    navigate('/');
+  };
+
+  // Get profile icon or use default
+  const profileIcon =
+    user?.profileIcon ||
+    'https://api.dicebear.com/7.x/adventurer/svg?seed=Felix';
 
   return (
-    <AuthenticationContext.Provider value={authentication}>
-      <SessionContext.Provider value={session}>
-        <Box sx={{ padding: '10px' }}>
-          {' '}
-          {/* Added padding for mobile view */}
-          {user ? (
-            <Account
-              user={user}
-              sx={{ width: '100%', height: 'auto' }} // Ensure it fits well in mobile view
+    <Box>
+      <IconButton
+        onClick={handleClick}
+        sx={{
+          padding: 0,
+          '&:hover': { opacity: 0.8 },
+        }}
+      >
+        <Avatar
+          src={profileIcon}
+          alt={user?.name || 'User'}
+          variant="rounded"
+          sx={{
+            width: 32,
+            height: 32,
+            borderRadius: '4px',
+          }}
+        />
+      </IconButton>
+
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+        PaperProps={{
+          sx: {
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            color: 'white',
+            minWidth: 200,
+            mt: 1,
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+          },
+        }}
+      >
+        <Box sx={{ px: 2, py: 1.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Avatar
+              src={profileIcon}
+              alt={user?.name || 'User'}
+              variant="rounded"
+              sx={{ width: 40, height: 40, borderRadius: '4px' }}
             />
-          ) : null}
+            <Box>
+              <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                {user?.name || 'User'}
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#b3b3b3' }}>
+                {user?.email || ''}
+              </Typography>
+            </Box>
+          </Box>
         </Box>
-      </SessionContext.Provider>
-    </AuthenticationContext.Provider>
+
+        <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.15)' }} />
+
+        <MenuItem
+          onClick={handleViewProfile}
+          sx={{
+            py: 1.5,
+            '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
+          }}
+        >
+          <PersonIcon sx={{ mr: 1.5, fontSize: 20 }} />
+          View Profile
+        </MenuItem>
+
+        <MenuItem
+          onClick={handleSignOut}
+          sx={{
+            py: 1.5,
+            '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
+          }}
+        >
+          <LogoutIcon sx={{ mr: 1.5, fontSize: 20 }} />
+          Sign Out
+        </MenuItem>
+      </Menu>
+    </Box>
   );
 }
 
