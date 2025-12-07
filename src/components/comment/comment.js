@@ -5,115 +5,324 @@ import {
   Input,
   InputLabel,
   Typography,
+  Avatar,
+  TextField,
+  Paper,
+  IconButton,
 } from '@mui/material';
-import React, { useState, useEffect } from 'react';
+import ThumbUpIcon from '@mui/icons-material/ThumbUp';
+import ThumbDownIcon from '@mui/icons-material/ThumbDown';
+import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
+import ThumbDownOutlinedIcon from '@mui/icons-material/ThumbDownOutlined';
+import axios from 'axios';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { submitComment } from '../../redux/videoSlice'; // Import the action to submit comments
+import { submitComment } from '../../redux/videoSlice';
 
-const CommentSection = ({ videoId }) => {
-  const dispatch = useDispatch();
-  const user = useSelector((state) => state.auth.user); // Get user from Redux store
-  const [comments, setComment] = useState('');
-  const [commentList, setCommentList] = useState([]); // State to store comments
+const CommentItem = ({ comment, user, token, onReply }) => {
+  const [showReplyInput, setShowReplyInput] = useState(false);
+  const [replyText, setReplyText] = useState('');
 
-  // Fetch comments when component mounts or when videoId changes
-  useEffect(() => {
-    if (videoId) {
-      const fetchVideoComments = async () => {
-        const response = await fetch(
-          `${process.env.REACT_APP_BACKEND_URL}/api/videos/${videoId}/comments`
-        );
-        const data = await response.json();
-        setCommentList(data); // Set the fetched comments in state
-      };
-      fetchVideoComments();
+  // Local state for optimistic updates
+  const [likes, setLikes] = useState(comment.likes || []);
+  const [dislikes, setDislikes] = useState(comment.dislikes || []);
+
+  const userId = user?.id || user?._id; // Handle both id formats
+  const hasLiked = likes.includes(userId);
+  const hasDisliked = dislikes.includes(userId);
+
+  const handleReplySubmit = () => {
+    if (replyText.trim()) {
+      onReply(replyText, comment._id);
+      setReplyText('');
+      setShowReplyInput(false);
     }
-  }, [videoId]); // Re-run if videoId changes
+  };
 
-  // Submit comment to the backend
-  const Submit = async () => {
-    const date = new Date().toISOString(); // Get current date in ISO format
-    if (!comments.trim()) return; // Prevent empty comments
+  const handleVote = async (type) => {
+    // type: 'like' or 'dislike'
+    if (!userId) return alert('Please login to vote');
 
-    let commentData = {
-      text: comments, // Use 'text' as the backend expects this key, not 'comment'
-      videoId: videoId,
-      user_id: user.id, // Ensure user.id is correctly available
-      name: user?.name,
-      date: date, // Use the current date
-    };
-    // Log comment data before submission
+    try {
+      // Optimistic update
+      if (type === 'like') {
+        if (hasLiked) {
+          setLikes((prev) => prev.filter((id) => id !== userId));
+        } else {
+          setLikes((prev) => [...prev, userId]);
+          if (hasDisliked)
+            setDislikes((prev) => prev.filter((id) => id !== userId));
+        }
+      } else {
+        if (hasDisliked) {
+          setDislikes((prev) => prev.filter((id) => id !== userId));
+        } else {
+          setDislikes((prev) => [...prev, userId]);
+          if (hasLiked) setLikes((prev) => prev.filter((id) => id !== userId));
+        }
+      }
 
-    if (!user || !user.id) {
-      console.error(
-        'User is not logged in or user ID is undefined. Cannot submit comment.'
+      const currentToken = token || localStorage.getItem('token'); // Use prop token, fallback to localStorage
+      await axios.put(
+        `${process.env.REACT_APP_BACKEND_URL}/api/comments/${comment._id}/${type}`, // Endpoint needs to match route
+        {},
+        { headers: { Authorization: `Bearer ${currentToken}` } }
       );
-      return; // Prevent submission if user is not logged in or user ID is undefined
-    }
-
-    const resultAction = await dispatch(submitComment(commentData)); // Dispatch the action to submit the comment
-
-    if (submitComment.fulfilled.match(resultAction)) {
-      // If the submission was successful, update the comment list
-      setCommentList((prevState) => [...prevState, commentData]);
-      setComment(''); // Clear the input field
-
-      // Fetch the updated list of comments after submission
-      const fetchUpdatedComments = async () => {
-        const response = await fetch(
-          `${process.env.REACT_APP_BACKEND_URL}/api/videos/${videoId}/comments`
-        );
-        const data = await response.json();
-        setCommentList(data); // Update the comment list with the latest data
-      };
-
-      fetchUpdatedComments(); // Trigger the refetch of comments
-    } else {
-      // Handle submission error if needed
-      console.error('Failed to submit comment:', resultAction.error.message);
+    } catch (e) {
+      console.error('Vote failed', e);
+      // Revert? (Complex without deep prop refresh)
     }
   };
 
   return (
-    <div>
-      <Box sx={{ marginTop: '20px' }}>
-        <FormControl fullWidth sx={{ m: 1 }} variant="standard">
-          <div>
-            <InputLabel
-              htmlFor="text"
-              sx={{ color: 'white', borderBlockColor: 'white' }}
-            >
-              Type your comment here
-            </InputLabel>
-            <Input
-              sx={{ color: 'white', width: '81%', marginTop: '20px' }}
-              onChange={(e) => setComment(e.target.value)}
-              id="text"
-              type="text"
-              value={comments}
-            />
-            <Button onClick={Submit} sx={{ color: 'red' }}>
-              Submit
-            </Button>
-          </div>
+    <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+        <Avatar
+          sx={{ bgcolor: '#c10000', width: 32, height: 32, fontSize: 14 }}
+        >
+          {comment.name ? comment.name[0].toUpperCase() : 'U'}
+        </Avatar>
+        <Box sx={{ flex: 1 }}>
           <Typography
-            variant="h2"
-            sx={{ fontSize: '24px', fontWeight: 'bold', marginTop: '20px' }}
+            variant="body2"
+            sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}
           >
-            Comments
-          </Typography>
-          {commentList.map((comment) => (
+            {comment.name}
             <Typography
-              key={comment._id}
-              sx={{ fontSize: '16px', color: '#aaaaaa', marginTop: '10px' }}
+              component="span"
+              variant="caption"
+              sx={{ color: '#aaa', ml: 1 }}
             >
-              {comment.text} - <strong>{comment.name}</strong> on{' '}
-              {new Date(comment.date).toLocaleString()}
+              ({new Date(comment.date).toLocaleString()})
             </Typography>
-          ))}
-        </FormControl>
+          </Typography>
+          <Typography variant="body1" sx={{ mt: 0.5, mb: 1, color: '#ddd' }}>
+            {comment.text}
+          </Typography>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <IconButton
+                size="small"
+                onClick={() => handleVote('like')}
+                sx={{ color: hasLiked ? 'white' : '#aaa', p: 0.5 }}
+              >
+                {hasLiked ? (
+                  <ThumbUpIcon fontSize="small" />
+                ) : (
+                  <ThumbUpOutlinedIcon fontSize="small" />
+                )}
+              </IconButton>
+              <Typography
+                variant="caption"
+                sx={{ color: '#aaa', minWidth: '16px' }}
+              >
+                {likes.length || 0}
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <IconButton
+                size="small"
+                onClick={() => handleVote('dislike')}
+                sx={{ color: hasDisliked ? 'white' : '#aaa', p: 0.5 }}
+              >
+                {hasDisliked ? (
+                  <ThumbDownIcon fontSize="small" />
+                ) : (
+                  <ThumbDownOutlinedIcon fontSize="small" />
+                )}
+              </IconButton>
+              <Typography
+                variant="caption"
+                sx={{ color: '#aaa', minWidth: '16px' }}
+              >
+                {dislikes.length || 0}
+              </Typography>
+            </Box>
+
+            {user && (
+              <Button
+                size="small"
+                sx={{
+                  color: '#aaa',
+                  textTransform: 'none',
+                  minWidth: 0,
+                  p: 0,
+                  ml: 2,
+                  '&:hover': { color: '#fff' },
+                }}
+                onClick={() => setShowReplyInput(!showReplyInput)}
+              >
+                Reply
+              </Button>
+            )}
+          </Box>
+
+          {showReplyInput && (
+            <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
+              <TextField
+                fullWidth
+                variant="standard"
+                placeholder="Add a reply..."
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                sx={{ input: { color: 'white', fontSize: '0.9rem' } }}
+              />
+              <Button
+                variant="contained"
+                size="small"
+                onClick={handleReplySubmit}
+                sx={{
+                  bgcolor: '#333',
+                  color: 'white',
+                  '&:hover': { bgcolor: '#555' },
+                }}
+              >
+                Reply
+              </Button>
+            </Box>
+          )}
+        </Box>
       </Box>
-    </div>
+
+      {/* Recursive Replies */}
+      {comment.replies && comment.replies.length > 0 && (
+        <Box sx={{ ml: 6, mt: 2, display: 'flex', flexDirection: 'column' }}>
+          {comment.replies.map((reply) => (
+            <CommentItem
+              key={reply._id}
+              comment={reply}
+              user={user}
+              token={token}
+              onReply={onReply}
+            />
+          ))}
+        </Box>
+      )}
+    </Box>
+  );
+};
+
+const CommentSection = ({ videoId }) => {
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.auth.user);
+  const token = useSelector((state) => state.auth.token); // Get token
+  const [mainComment, setMainComment] = useState('');
+  const [commentList, setCommentList] = useState([]);
+
+  const fetchVideoComments = async () => {
+    try {
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URL}/api/videos/${videoId}/comments`
+      );
+      const data = await response.json();
+      setCommentList(data);
+    } catch (e) {
+      console.error('Failed to fetch comments', e);
+    }
+  };
+
+  useEffect(() => {
+    if (videoId) fetchVideoComments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoId]);
+
+  const handleSubmit = async (text, parentId = null) => {
+    if (!user || !user.id || !text.trim()) return;
+
+    const commentData = {
+      text: text,
+      videoId: videoId,
+      user_id: user.id,
+      name: user.name,
+      date: new Date().toISOString(),
+      parentId: parentId,
+    };
+
+    const action = await dispatch(submitComment(commentData));
+    if (submitComment.fulfilled.match(action)) {
+      if (!parentId) setMainComment('');
+      fetchVideoComments(); // Refresh to rebuild tree
+    }
+  };
+
+  // Convert flat list to tree
+  const commentTree = useMemo(() => {
+    const map = {};
+    const roots = [];
+
+    // Copy and map
+    commentList.forEach((c) => {
+      map[c._id] = { ...c, replies: [] };
+    });
+
+    commentList.forEach((c) => {
+      if (c.parentId && map[c.parentId]) {
+        map[c.parentId].replies.push(map[c._id]);
+      } else {
+        roots.push(map[c._id]);
+      }
+    });
+
+    // Sort by date desc for roots? Or asc? usually top comments are popular or newest.
+    return roots.sort((a, b) => new Date(b.date) - new Date(a.date));
+  }, [commentList]);
+
+  return (
+    <Box sx={{ mt: 4, color: 'white' }}>
+      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3 }}>
+        {commentList.length} Comments
+      </Typography>
+
+      {/* Main Comment Input */}
+      {user ? (
+        <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
+          <Avatar sx={{ bgcolor: '#c10000' }}>
+            {user.name ? user.name[0].toUpperCase() : 'U'}
+          </Avatar>
+          <Box sx={{ flex: 1 }}>
+            <Input
+              fullWidth
+              placeholder="Add a comment..."
+              value={mainComment}
+              onChange={(e) => setMainComment(e.target.value)}
+              sx={{ color: 'white', borderBottom: '1px solid #555' }}
+            />
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+              <Button
+                disabled={!mainComment.trim()}
+                onClick={() => handleSubmit(mainComment)}
+                sx={{ color: '#aaa', '&:hover': { color: 'white' } }}
+              >
+                Comment
+              </Button>
+            </Box>
+          </Box>
+        </Box>
+      ) : (
+        <Typography sx={{ color: '#aaa', mb: 3 }}>
+          Please{' '}
+          <Button href="/login" sx={{ color: '#c10000' }}>
+            sign in
+          </Button>{' '}
+          to comment.
+        </Typography>
+      )}
+
+      {/* Render Comments */}
+      <Box>
+        {commentTree.map((comment) => (
+          <CommentItem
+            key={comment._id}
+            comment={comment}
+            user={user}
+            token={token}
+            onReply={handleSubmit}
+          />
+        ))}
+      </Box>
+    </Box>
   );
 };
 

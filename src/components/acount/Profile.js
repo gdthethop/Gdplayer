@@ -12,6 +12,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { updateUserProfileAsync } from '../../redux/authSlice';
 import { useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import axios from 'axios'; // Import axios
 import { CircularProgress, Snackbar, Alert } from '@mui/material';
 
 // Mock set of Netflix-ish avatars
@@ -56,6 +57,7 @@ const Profile = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const user = useSelector((state) => state.auth.user);
+  const token = useSelector((state) => state.auth.token); // Need token for direct calls
 
   const [name, setName] = useState(user?.name || '');
   const [selectedAvatar, setSelectedAvatar] = useState(
@@ -64,6 +66,51 @@ const Profile = () => {
   );
   const [saving, setSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // 2FA State
+  const [show2FASetup, setShow2FASetup] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState(null);
+  const [twoFactorToken, setTwoFactorToken] = useState('');
+
+  // Session State
+  const [sessions, setSessions] = useState([]);
+  const [loadingSessions, setLoadingSessions] = useState(false);
+
+  // Fetch Sessions
+  const fetchSessions = async () => {
+    setLoadingSessions(true);
+    try {
+      const res = await axios.get(
+        `${process.env.REACT_APP_BACKEND_URL}/api/auth/sessions`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setSessions(res.data);
+    } catch (error) {
+      console.error('Failed to fetch sessions', error);
+    } finally {
+      setLoadingSessions(false);
+    }
+  };
+
+  useEffect(() => {
+    if (token) fetchSessions();
+  }, [token]);
+
+  const handleRevokeSession = async (sessionId) => {
+    if (!window.confirm('Are you sure you want to revoke this session?'))
+      return;
+    try {
+      await axios.delete(
+        `${process.env.REACT_APP_BACKEND_URL}/api/auth/sessions/${sessionId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      // Refresh list
+      fetchSessions();
+    } catch (error) {
+      console.error('Failed to revoke session', error);
+      alert('Failed to revoke session');
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -93,6 +140,71 @@ const Profile = () => {
     }
   };
 
+  // 2FA Handlers
+  const handleSetup2FA = async () => {
+    setShow2FASetup(true);
+    try {
+      const res = await axios.post(
+        `${process.env.REACT_APP_BACKEND_URL}/api/auth/2fa/generate`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setQrCodeUrl(res.data.qrCode);
+    } catch (error) {
+      console.error('Failed to generate 2FA', error);
+      alert('Failed to start 2FA setup');
+      setShow2FASetup(false);
+    }
+  };
+
+  const handleVerify2FA = async () => {
+    try {
+      await axios.post(
+        `${process.env.REACT_APP_BACKEND_URL}/api/auth/2fa/verify`,
+        { token: twoFactorToken },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert('2FA Enabled Successfully!');
+      setShow2FASetup(false);
+      setQrCodeUrl(null);
+      setTwoFactorToken('');
+      // Update local user state
+      dispatch({
+        type: 'auth/updateUserProfile',
+        payload: { isTwoFactorEnabled: true },
+      });
+    } catch (error) {
+      console.error('Failed to verify 2FA', error);
+      alert('Invalid Code. Please try again.');
+    }
+  };
+
+  const handleDisable2FA = async () => {
+    if (
+      !window.confirm(
+        'Are you sure you want to disable 2FA? This makes your account less secure.'
+      )
+    )
+      return;
+
+    try {
+      await axios.post(
+        `${process.env.REACT_APP_BACKEND_URL}/api/auth/2fa/disable`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert('2FA Disabled.');
+      // Update local user state
+      dispatch({
+        type: 'auth/updateUserProfile',
+        payload: { isTwoFactorEnabled: false },
+      });
+    } catch (error) {
+      console.error('Failed to disable 2FA', error);
+      alert('Failed to disable 2FA');
+    }
+  };
+
   const handleCancel = () => {
     navigate('/home');
   };
@@ -115,7 +227,7 @@ const Profile = () => {
           width: '100%',
           maxWidth: '800px',
           display: 'flex',
-          justifyContent: 'flex-start',
+          justifyContent: 'space-between',
           mb: 4,
         }}
       >
@@ -125,6 +237,18 @@ const Profile = () => {
           sx={{ color: '#b3b3b3', '&:hover': { color: 'white' } }}
         >
           Back to Home
+        </Button>
+
+        <Button
+          variant="contained"
+          onClick={() => navigate('/studio')}
+          sx={{
+            bgcolor: '#252525',
+            color: 'white',
+            '&:hover': { bgcolor: '#444' },
+          }}
+        >
+          Creator Studio
         </Button>
       </Box>
 
@@ -280,6 +404,165 @@ const Profile = () => {
           >
             Cancel
           </Button>
+        </Box>
+      </Paper>
+
+      {/* Security Section */}
+      <Paper
+        sx={{
+          p: 4,
+          mt: 4,
+          backgroundColor: '#1f1f1f',
+          maxWidth: '600px',
+          width: '100%',
+          borderRadius: '8px',
+        }}
+      >
+        <Typography variant="h5" sx={{ mb: 3, color: '#e5e5e5' }}>
+          Security
+        </Typography>
+
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Box>
+            <Typography variant="h6" sx={{ color: 'white' }}>
+              Two-Factor Authentication
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#b3b3b3' }}>
+              Add an extra layer of security to your account.
+            </Typography>
+          </Box>
+          <Button
+            variant={user?.isTwoFactorEnabled ? 'contained' : 'outlined'}
+            color={user?.isTwoFactorEnabled ? 'success' : 'primary'}
+            onClick={() => {
+              if (user?.isTwoFactorEnabled) {
+                handleDisable2FA();
+              } else {
+                handleSetup2FA();
+              }
+            }}
+          >
+            {user?.isTwoFactorEnabled ? 'Enabled' : 'Enable 2FA'}
+          </Button>
+        </Box>
+
+        {/* 2FA Setup Area */}
+        {show2FASetup && (
+          <Box sx={{ mt: 3, p: 2, border: '1px solid #333', borderRadius: 2 }}>
+            {qrCodeUrl ? (
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="body2" sx={{ mb: 2 }}>
+                  Scan this QR code with your authenticator app (e.g. Google
+                  Authenticator)
+                </Typography>
+                <img
+                  src={qrCodeUrl}
+                  alt="2FA QR Code"
+                  style={{ borderRadius: 8, marginBottom: 16 }}
+                />
+
+                <TextField
+                  label="Enter 6-digit Code"
+                  variant="filled"
+                  fullWidth
+                  value={twoFactorToken}
+                  onChange={(e) => setTwoFactorToken(e.target.value)}
+                  sx={{
+                    backgroundColor: '#333',
+                    input: {
+                      color: 'white',
+                      textAlign: 'center',
+                      letterSpacing: 4,
+                    },
+                    mb: 2,
+                  }}
+                />
+                <Button
+                  variant="contained"
+                  fullWidth
+                  onClick={handleVerify2FA}
+                  disabled={!twoFactorToken || twoFactorToken.length < 6}
+                >
+                  Verify & Enable
+                </Button>
+              </Box>
+            ) : (
+              <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                <CircularProgress />
+              </Box>
+            )}
+          </Box>
+        )}
+
+        {/* Active Sessions */}
+        <Box sx={{ mt: 5, pt: 3, borderTop: '1px solid #333' }}>
+          <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+            Active Sessions
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#b3b3b3', mb: 3 }}>
+            Manage devices and locations where you are signed in.
+          </Typography>
+
+          {sessions.map((session) => (
+            <Box
+              key={session._id}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                mb: 2,
+                p: 2,
+                bgcolor: '#252525',
+                borderRadius: 2,
+              }}
+            >
+              <Box>
+                <Typography
+                  variant="subtitle2"
+                  sx={{ color: '#fff', fontWeight: 'bold' }}
+                >
+                  {session.userAgent
+                    ? session.userAgent.includes('Mac')
+                      ? 'Mac/iOS Device'
+                      : session.userAgent.includes('Windows')
+                        ? 'Windows Device'
+                        : 'Unknown Device'
+                    : 'Unknown Device'}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{ color: '#888', display: 'block' }}
+                >
+                  IP: {session.ipAddress}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{ color: session.isCurrent ? '#4caf50' : '#888' }}
+                >
+                  {session.isCurrent
+                    ? 'Current Session'
+                    : `Last active: ${new Date(session.lastActive).toLocaleDateString()}`}
+                </Typography>
+              </Box>
+              {!session.isCurrent && (
+                <Button
+                  color="error"
+                  size="small"
+                  onClick={() => handleRevokeSession(session._id)}
+                >
+                  Revoke
+                </Button>
+              )}
+            </Box>
+          ))}
+
+          {loadingSessions && <CircularProgress size={20} />}
         </Box>
       </Paper>
 

@@ -15,6 +15,7 @@ const initialState = {
   videoGenres: '',
   videoLikes: 0,
   videoDislikes: 0,
+  videoUploader: null,
   status: 'idle',
   error: null,
 };
@@ -154,6 +155,7 @@ const videoSlice = createSlice({
         state.videoViews = action.payload.views;
         state.videoLikes = action.payload.likes;
         state.videoDislikes = action.payload.dislikes;
+        state.videoUploader = action.payload.userId;
       })
       .addCase(fetchVideoDetailsByShortCode.fulfilled, (state, action) => {
         state.videoUrl = action.payload.link;
@@ -162,6 +164,7 @@ const videoSlice = createSlice({
         state.videoViews = action.payload.views;
         state.videoLikes = action.payload.likes;
         state.videoDislikes = action.payload.dislikes;
+        state.videoUploader = action.payload.userId;
       })
       .addCase(updateVideoViewsById.fulfilled, (state, action) => {
         state.videoViews = action.payload.views;

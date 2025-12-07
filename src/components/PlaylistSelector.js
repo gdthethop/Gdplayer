@@ -14,6 +14,7 @@ const PlaylistSelector = ({
   selectedPlaylist,
   onPlaylistChange,
   onNewPlaylist,
+  token,
 }) => {
   const [playlists, setPlaylists] = useState([]);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
@@ -26,7 +27,10 @@ const PlaylistSelector = ({
   const fetchPlaylists = async () => {
     try {
       const response = await axios.get(
-        `${process.env.REACT_APP_BACKEND_URL}/api/videos/playlists`
+        `${process.env.REACT_APP_BACKEND_URL}/api/videos/playlists`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
       setPlaylists(response.data);
     } catch (error) {

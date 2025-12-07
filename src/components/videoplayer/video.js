@@ -12,12 +12,22 @@ import {
   decrementVideoDislikes,
   clearVideoDetails,
 } from '../../redux/videoSlice';
-import { Box, Typography, Button, Grid } from '@mui/material';
+import { toggleWatchLaterAction } from '../../redux/userSlice';
+import { addToHistory } from '../../redux/historySlice'; // Import History Action
+import { Box, Typography, Button, Grid, Avatar } from '@mui/material';
+import {
+  checkSubscriptionStatus,
+  subscribeToChannel,
+  unsubscribeFromChannel,
+} from '../../redux/subscriptionSlice';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import ThumbDownIcon from '@mui/icons-material/ThumbDown';
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
 import ThumbDownOutlinedIcon from '@mui/icons-material/ThumbDownOutlined';
 import ShareIcon from '@mui/icons-material/Share';
+import WatchLaterIcon from '@mui/icons-material/WatchLater';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+
 import Header from '../header/header';
 import CommentSection from '../comment/comment';
 import Recommendation from '../recomendations/recomendation';
@@ -37,6 +47,11 @@ const VideoPlayer = () => {
   const [hasLiked, setHasLiked] = useState(false);
   const [hasDisliked, setHasDisliked] = useState(false);
 
+  const [inWatchLater, setInWatchLater] = useState(false); // Watch Later State
+
+  const { isSubscribed } = useSelector((state) => state.subscription);
+  const { videoUploader } = useSelector((state) => state.video);
+
   // Custom Player State
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -46,6 +61,9 @@ const VideoPlayer = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [isSeeking, setIsSeeking] = useState(false);
+  const [isPip, setIsPip] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
 
   // Extract videoId from URL query params if available
   const getQueryParam = (param) =>
@@ -65,6 +83,34 @@ const VideoPlayer = () => {
     isUpdatingLikes,
     isUpdatingDislikes,
   } = useSelector((state) => state.video);
+
+  const user = useSelector((state) => state.auth.user);
+  const { watchLaterIds } = useSelector((state) => state.user); // Watch Later IDs
+
+  // Sync Watch Later State
+  useEffect(() => {
+    if (watchLaterIds && videoId) {
+      setInWatchLater(watchLaterIds.includes(videoId));
+    }
+  }, [watchLaterIds, videoId]);
+
+  useEffect(() => {
+    if (videoUploader && videoUploader._id) {
+      if (user) dispatch(checkSubscriptionStatus(videoUploader._id));
+    }
+  }, [dispatch, videoUploader, user]);
+
+  const handleSubscribe = async () => {
+    if (!user) {
+      alert('Please sign in to subscribe.');
+      return;
+    }
+    if (isSubscribed) {
+      await dispatch(unsubscribeFromChannel(videoUploader._id));
+    } else {
+      await dispatch(subscribeToChannel(videoUploader._id));
+    }
+  };
 
   // Helper to convert Cloudinary embed URL to direct MP4 URL
   const getDirectVideoUrl = (url) => {
@@ -222,26 +268,131 @@ const VideoPlayer = () => {
   }, [processedVideoUrl]); // Trigger whenever the URL changes
 
   useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ignore if user is typing in an input or textarea
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName))
+        return;
+
+      const video = videoRef.current;
+      if (!video) return;
+
+      switch (e.key.toLowerCase()) {
+        case ' ':
+        case 'k':
+          e.preventDefault();
+          togglePlay();
+          break;
+        case 'f':
+          e.preventDefault();
+          toggleFullscreen();
+          break;
+        case 'm':
+          e.preventDefault();
+          toggleMute();
+          break;
+        case 'arrowleft':
+          e.preventDefault();
+          video.currentTime = Math.max(video.currentTime - 5, 0);
+          break;
+        case 'arrowright':
+          e.preventDefault();
+          video.currentTime = Math.min(video.currentTime + 5, video.duration);
+          break;
+        case 'j':
+          e.preventDefault();
+          video.currentTime = Math.max(video.currentTime - 10, 0);
+          break;
+        case 'l':
+          e.preventDefault();
+          video.currentTime = Math.min(video.currentTime + 10, video.duration);
+          break;
+        case 'arrowup':
+          e.preventDefault();
+
+          handleVolumeChange(null, Math.min(volume + 0.1, 1));
+          break;
+        case 'arrowdown':
+          e.preventDefault();
+          handleVolumeChange(null, Math.max(volume - 0.1, 0));
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [volume, isPlaying]);
+
+  // --- New Handlers for Controls ---
+  const togglePip = async () => {
+    try {
+      if (videoRef.current) {
+        if (document.pictureInPictureElement) {
+          await document.exitPictureInPicture();
+          setIsPip(false);
+        } else {
+          await videoRef.current.requestPictureInPicture();
+          setIsPip(true);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to enter PiP:', err);
+    }
+  };
+
+  const handlePlaybackRateChange = (newRate) => {
     if (videoRef.current) {
-      // Sync initial state if needed
-      setIsMuted(videoRef.current.muted);
+      videoRef.current.playbackRate = newRate;
+      setPlaybackRate(newRate);
+    }
+  };
 
+  // --- Watch History Sync ---
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (isPlaying && videoRef.current && videoId && user) {
+        dispatch(
+          addToHistory({
+            videoId,
+            progress: videoRef.current.currentTime,
+            completed: videoRef.current.ended,
+          })
+        );
+      }
+    }, 15000); // Pulse every 15 seconds
+
+    return () => clearInterval(intervalId);
+  }, [isPlaying, videoId, user, dispatch]);
+
+  // Also save on pause
+  useEffect(() => {
+    if (videoRef.current) {
+      const onPause = () => {
+        if (videoId && user) {
+          dispatch(
+            addToHistory({
+              videoId,
+              progress: videoRef.current.currentTime,
+              completed: videoRef.current.ended,
+            })
+          );
+        }
+        setIsPlaying(false);
+      };
       const onPlay = () => setIsPlaying(true);
-      const onPause = () => setIsPlaying(false);
 
-      videoRef.current.addEventListener('play', onPlay);
       videoRef.current.addEventListener('pause', onPause);
+      videoRef.current.addEventListener('play', onPlay);
 
       return () => {
         if (videoRef.current) {
-          videoRef.current.removeEventListener('play', onPlay);
           videoRef.current.removeEventListener('pause', onPause);
+          videoRef.current.removeEventListener('play', onPlay);
         }
       };
     }
-  }, [processedVideoUrl]);
-
-  const user = useSelector((state) => state.auth.user);
+  }, [videoId, user, dispatch, processedVideoUrl]);
 
   useEffect(() => {
     // Clear previous video details immediately to prevent showing old content
@@ -260,6 +411,10 @@ const VideoPlayer = () => {
   const getCurrentVideoId = () => shortCode || videoIdFromQuery || videoId;
 
   const handleLike = () => {
+    if (!user) {
+      alert('Please sign in to like this video.');
+      return;
+    }
     if (!isUpdatingLikes) {
       if (hasLiked) {
         dispatch(decrementVideoLikes());
@@ -276,6 +431,10 @@ const VideoPlayer = () => {
   };
 
   const handleDislike = () => {
+    if (!user) {
+      alert('Please sign in to dislike this video.');
+      return;
+    }
     if (!isUpdatingDislikes) {
       if (hasDisliked) {
         dispatch(decrementVideoDislikes());
@@ -289,6 +448,21 @@ const VideoPlayer = () => {
         }
       }
     }
+  };
+
+  const handleWatchLater = async () => {
+    if (!user) {
+      alert('Please sign in to save to Watch Later.');
+      return;
+    }
+    // Optimistic Update
+    setInWatchLater(!inWatchLater);
+    await dispatch(toggleWatchLaterAction(videoId));
+  };
+
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    alert('Link copied to clipboard!');
   };
 
   const controlsTimeoutRef = useRef(null);
@@ -363,12 +537,15 @@ const VideoPlayer = () => {
                 >
                   <>
                     <video
-                      key={processedVideoUrl} // Force re-render when URL changes
+                      key={processedVideoUrl}
                       ref={videoRef}
                       onClick={togglePlay}
                       onTimeUpdate={handleTimeUpdate}
                       onLoadedMetadata={handleLoadedMetadata}
                       onEnded={() => setIsPlaying(false)}
+                      // Listen for PiP events to sync state
+                      onEnterPictureInPicture={() => setIsPip(true)}
+                      onLeavePictureInPicture={() => setIsPip(false)}
                       autoPlay
                       style={{
                         width: '100%',
@@ -397,6 +574,11 @@ const VideoPlayer = () => {
                       onFullscreen={toggleFullscreen}
                       isFullscreen={isFullscreen}
                       showControls={showControls}
+                      // New Props
+                      onPip={togglePip}
+                      isPip={isPip}
+                      playbackRate={playbackRate}
+                      onPlaybackRateChange={handlePlaybackRateChange}
                     />
                   </>
                 </Box>
@@ -480,6 +662,7 @@ const VideoPlayer = () => {
                     </Box>
 
                     <Button
+                      onClick={handleShare}
                       startIcon={<ShareIcon />}
                       sx={{
                         backgroundColor: '#272727',
@@ -492,16 +675,67 @@ const VideoPlayer = () => {
                     >
                       Share
                     </Button>
+
+                    <Button
+                      onClick={handleWatchLater}
+                      startIcon={
+                        inWatchLater ? <WatchLaterIcon /> : <AccessTimeIcon />
+                      }
+                      sx={{
+                        backgroundColor: '#272727',
+                        color: 'white',
+                        borderRadius: '20px',
+                        padding: '6px 16px',
+                        textTransform: 'none',
+                        '&:hover': { backgroundColor: '#3f3f3f' },
+                      }}
+                    >
+                      {inWatchLater ? 'Saved' : 'Save'}
+                    </Button>
                   </Box>
                 </Box>
+
+                {/* Channel Info & Subscribe */}
+                {videoUploader && (
+                  <Box
+                    sx={{
+                      mt: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      borderTop: '1px solid #333',
+                      borderBottom: '1px solid #333',
+                      py: 2,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2,
+                        cursor: 'pointer' /* navigate to profile? */,
+                      }}
+                    >
+                      <Avatar
+                        src={videoUploader.profileIcon}
+                        alt={videoUploader.name}
+                      />
+                      <Box>
+                        <Typography variant="subtitle1" fontWeight="bold">
+                          {videoUploader.name}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                )}
 
                 {/* Description Box */}
                 <Box
                   sx={{
+                    marginTop: '16px',
                     backgroundColor: '#272727',
                     borderRadius: '12px',
                     padding: '12px',
-                    marginTop: '16px',
                     '&:hover': { backgroundColor: '#3f3f3f' },
                     cursor: 'pointer',
                   }}

@@ -10,16 +10,55 @@ import {
   Avatar,
   Typography,
   Divider,
+  Badge,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemAvatar,
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import LogoutIcon from '@mui/icons-material/Logout';
+import VideoCallIcon from '@mui/icons-material/VideoCall';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import {
+  fetchNotifications,
+  markNotificationRead,
+} from '../../redux/notificationSlice';
 
 function AccountContainer() {
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
+  const { items: notifications, unreadCount } = useSelector(
+    (state) => state.notifications
+  );
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = React.useState(null);
+  const [notifAnchorEl, setNotifAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
+  const notifOpen = Boolean(notifAnchorEl);
+
+  React.useEffect(() => {
+    if (user) {
+      dispatch(fetchNotifications());
+    }
+  }, [dispatch, user]);
+
+  const handleNotifClick = (event) => {
+    setNotifAnchorEl(event.currentTarget);
+  };
+
+  const handleNotifClose = () => {
+    setNotifAnchorEl(null);
+    // Optional: mark all read on close? No, prefer explicit click or explicit 'Mark All' button.
+  };
+
+  const handleNotificationItemClick = (notification) => {
+    dispatch(markNotificationRead(notification._id));
+    if (notification.link) {
+      navigate(notification.link);
+    }
+    handleNotifClose();
+  };
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -45,8 +84,100 @@ function AccountContainer() {
     user?.profileIcon ||
     'https://i.pinimg.com/originals/bd/ee/4c/bdee4c328550aaf21aa9f43fd19e2136.png';
 
+  const handleLogin = () => navigate('/login');
+  const handleSignup = () => navigate('/signup');
+
+  if (!user) {
+    return (
+      <Box sx={{ display: 'flex', gap: 2 }}>
+        <Typography
+          onClick={handleLogin}
+          sx={{
+            color: 'white',
+            cursor: 'pointer',
+            fontWeight: 600,
+            '&:hover': { color: '#c10000' },
+          }}
+        >
+          Login
+        </Typography>
+        <Typography
+          onClick={handleSignup}
+          sx={{
+            color: '#c10000',
+            cursor: 'pointer',
+            fontWeight: 600,
+            border: '1px solid #c10000',
+            borderRadius: '4px',
+            px: 1,
+            '&:hover': { bgcolor: '#c10000', color: 'white' },
+          }}
+        >
+          Sign Up
+        </Typography>
+      </Box>
+    );
+  }
+
   return (
-    <Box>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+      <IconButton onClick={handleNotifClick} sx={{ color: 'white' }}>
+        <Badge badgeContent={unreadCount} color="error">
+          <NotificationsIcon />
+        </Badge>
+      </IconButton>
+      <Menu
+        anchorEl={notifAnchorEl}
+        open={notifOpen}
+        onClose={handleNotifClose}
+        PaperProps={{
+          sx: {
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            color: 'white',
+            minWidth: 300,
+            maxHeight: 400,
+            mt: 1,
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+          },
+        }}
+      >
+        <Box sx={{ p: 2, borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+          <Typography variant="h6" fontSize="16px">
+            Notifications
+          </Typography>
+        </Box>
+        <List sx={{ p: 0 }}>
+          {notifications.length === 0 ? (
+            <ListItem>
+              <ListItemText primary="No notifications" />
+            </ListItem>
+          ) : (
+            notifications.map((notif) => (
+              <ListItem
+                key={notif._id}
+                button
+                onClick={() => handleNotificationItemClick(notif)}
+                sx={{
+                  opacity: notif.isRead ? 0.6 : 1,
+                  bgcolor: notif.isRead
+                    ? 'transparent'
+                    : 'rgba(255,255,255,0.05)',
+                }}
+              >
+                <ListItemText
+                  primary={notif.message}
+                  secondary={new Date(notif.createdAt).toLocaleDateString()}
+                  primaryTypographyProps={{
+                    fontSize: '14px',
+                    fontWeight: notif.isRead ? 400 : 700,
+                  }}
+                  secondaryTypographyProps={{ fontSize: '12px', color: '#aaa' }}
+                />
+              </ListItem>
+            ))
+          )}
+        </List>
+      </Menu>
       <IconButton
         onClick={handleClick}
         sx={{
@@ -100,6 +231,20 @@ function AccountContainer() {
         </Box>
 
         <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.15)' }} />
+
+        <MenuItem
+          onClick={() => {
+            handleClose();
+            navigate('/gd');
+          }}
+          sx={{
+            py: 1.5,
+            '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.1)' },
+          }}
+        >
+          <VideoCallIcon sx={{ mr: 1.5, fontSize: 20 }} />
+          Create Video
+        </MenuItem>
 
         <MenuItem
           onClick={handleViewProfile}

@@ -45,6 +45,12 @@ export const loginUser = createAsyncThunk(
           headers: { 'Content-Type': 'application/json' },
         }
       );
+
+      // Check if 2FA is required
+      if (response.data.requires2FA) {
+        return { requires2FA: true, message: response.data.message };
+      }
+
       return { user: response.data.user, token: response.data.token }; // Ensure user and token are returned
     } catch (error) {
       // If error, reject with message from the backend or a default message
@@ -127,10 +133,14 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.status = 'succeeded'; // Set status to 'succeeded' on success
-        state.token = action.payload.token;
-        state.user = action.payload.user; // Set user in state
-        localStorage.setItem('token', action.payload.token);
-        localStorage.setItem('user', JSON.stringify(action.payload.user));
+
+        // Only set if we have a token (not partial 2FA step)
+        if (action.payload.token) {
+          state.token = action.payload.token;
+          state.user = action.payload.user; // Set user in state
+          localStorage.setItem('token', action.payload.token);
+          localStorage.setItem('user', JSON.stringify(action.payload.user));
+        }
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.status = 'failed'; // Set status to 'failed' on error

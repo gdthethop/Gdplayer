@@ -1,11 +1,26 @@
-import React from 'react';
-import { Box, Typography, Slider, IconButton, Stack } from '@mui/material';
+import React, { useState } from 'react';
+import {
+  Box,
+  Typography,
+  Slider,
+  IconButton,
+  Stack,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+} from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
+import PictureInPictureAltIcon from '@mui/icons-material/PictureInPictureAlt';
+import SettingsIcon from '@mui/icons-material/Settings';
+import CheckIcon from '@mui/icons-material/Check';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import SpeedIcon from '@mui/icons-material/Speed';
 import { styled } from '@mui/material/styles';
 
 const TinyText = styled(Typography)({
@@ -31,7 +46,26 @@ const CustomControls = ({
   onFullscreen,
   isFullscreen,
   showControls,
+  // New Props
+  onPip,
+  isPip,
+  playbackRate,
+  onPlaybackRateChange,
 }) => {
+  // Settings Menu State
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [menuView, setMenuView] = useState('main'); // 'main', 'speed'
+
+  const handleSettingsClick = (event) => {
+    setAnchorEl(event.currentTarget);
+    setMenuView('main');
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+    setMenuView('main');
+  };
+
   // Format time helper
   const formatTime = (seconds) => {
     if (isNaN(seconds)) return '00:00';
@@ -43,6 +77,59 @@ const CustomControls = ({
       return `${hh}:${mm.toString().padStart(2, '0')}:${ss}`;
     }
     return `${mm}:${ss}`;
+  };
+
+  const handleSpeedChange = (rate) => {
+    onPlaybackRateChange(rate);
+    handleClose();
+  };
+
+  const renderSettingsMenu = () => {
+    const speeds = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+
+    if (menuView === 'main') {
+      return (
+        <Box sx={{ width: 200 }}>
+          <MenuItem onClick={() => setMenuView('speed')}>
+            <ListItemIcon>
+              <SpeedIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText
+              primary="Playback Speed"
+              secondary={playbackRate === 1 ? 'Normal' : `${playbackRate}x`}
+            />
+            <Typography variant="body2" color="text.secondary">
+              {'>'}
+            </Typography>
+          </MenuItem>
+          {/* Quality placeholder */}
+          <MenuItem disabled>
+            <ListItemText primary="Quality" secondary="Auto (1080p)" />
+          </MenuItem>
+        </Box>
+      );
+    }
+
+    if (menuView === 'speed') {
+      return (
+        <Box sx={{ width: 200, maxHeight: 300, overflowY: 'auto' }}>
+          <MenuItem onClick={() => setMenuView('main')}>
+            <ListItemIcon>
+              <ArrowBackIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary="Back" />
+          </MenuItem>
+          {speeds.map((rate) => (
+            <MenuItem key={rate} onClick={() => handleSpeedChange(rate)}>
+              <ListItemIcon>
+                {playbackRate === rate && <CheckIcon fontSize="small" />}
+              </ListItemIcon>
+              <ListItemText primary={rate === 1 ? 'Normal' : `${rate}x`} />
+            </MenuItem>
+          ))}
+        </Box>
+      );
+    }
   };
 
   return (
@@ -58,9 +145,10 @@ const CustomControls = ({
         flexDirection: 'column',
         justifyContent: 'space-between',
         zIndex: 10,
-        opacity: showControls || !isPlaying ? 1 : 0,
+        opacity: showControls || !isPlaying || Boolean(anchorEl) ? 1 : 0, // Keep visible if menu is open
         transition: 'opacity 0.3s ease-in-out',
-        pointerEvents: showControls || !isPlaying ? 'auto' : 'none',
+        pointerEvents:
+          showControls || !isPlaying || Boolean(anchorEl) ? 'auto' : 'none',
       }}
     >
       {/* Center Play Button (Logo) */}
@@ -192,13 +280,50 @@ const CustomControls = ({
             </Typography>
           </Stack>
 
-          <Stack direction="row" alignItems="center">
+          <Stack direction="row" alignItems="center" spacing={1}>
+            {/* Settings Toggle */}
+            <IconButton onClick={handleSettingsClick} sx={{ color: 'white' }}>
+              <SettingsIcon />
+            </IconButton>
+
+            {/* PiP Button */}
+            {document.pictureInPictureEnabled && (
+              <IconButton onClick={onPip} sx={{ color: 'white' }}>
+                <PictureInPictureAltIcon />
+              </IconButton>
+            )}
+
             <IconButton onClick={onFullscreen} sx={{ color: 'white' }}>
               {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
             </IconButton>
           </Stack>
         </Stack>
       </Box>
+
+      {/* Settings Menu Popover */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleClose}
+        anchorOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        PaperProps={{
+          sx: {
+            backgroundColor: 'rgba(28, 28, 28, 0.95)',
+            color: 'white',
+            borderRadius: 2,
+            backdropFilter: 'blur(10px)',
+          },
+        }}
+      >
+        {renderSettingsMenu()}
+      </Menu>
     </Box>
   );
 };

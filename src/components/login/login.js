@@ -40,22 +40,38 @@ const Login = () => {
     formState: { errors },
   } = useForm();
   const [error, setError] = React.useState('');
+  const [requires2FA, setRequires2FA] = React.useState(false); // New state for 2FA
   const navigate = useNavigate();
   const location = useLocation();
-  const dispatch = useDispatch(); // Declare dispatch here
+  const dispatch = useDispatch();
 
   const onSubmit = async (data) => {
     // Log the submitted data
-    setError(''); // Reset error state before login attempt
-    console.error('Login failed:', error);
+    setError('');
+    console.log('Logging in...', data);
 
     try {
       const result = await dispatch(loginUser(data)).unwrap();
+
+      if (result.requires2FA) {
+        setRequires2FA(true);
+        // Don't navigate yet
+        return;
+      }
+
       const from = location.state?.from?.pathname || '/home';
       navigate(from, { replace: true });
     } catch (error) {
-      setError(error.response?.data?.error || 'Invalid email or password');
-      console.error('Login failed:', error);
+      console.error('Login Error Object:', error);
+      // Handle 2FA specific error or general error
+      // Redux toolkit rejectWithValue might return the error payload directly or wrapped.
+      // Adjust based on how authSlice returns errors.
+      // Assuming standard error string or object:
+      if (requires2FA && error.message === 'Invalid 2FA Code') {
+        setError('Invalid 2FA Code. Please try again.');
+      } else {
+        setError(error.message || error.error || 'Invalid email or password');
+      }
     }
   };
 
@@ -131,10 +147,12 @@ const Login = () => {
               variant="h5"
               sx={{ marginBottom: 2, fontWeight: 800 }}
             >
-              Sign In
+              {requires2FA ? 'Two-Factor Authentication' : 'Sign In'}
             </Typography>
             <Typography variant="body2" sx={{ marginBottom: 2 }}>
-              Welcome, please sign in to continue
+              {requires2FA
+                ? 'Please enter the code from your authenticator app'
+                : 'Welcome, please sign in to continue'}
             </Typography>
             <Box
               component="form"
@@ -142,73 +160,117 @@ const Login = () => {
               sx={{ width: '100%' }}
               onSubmit={handleSubmit(onSubmit)}
             >
-              <Controller
-                name="email"
-                control={control}
-                defaultValue=""
-                rules={{
-                  required: 'Email is required',
-                  pattern: {
-                    value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-                    message: 'Invalid email address',
-                  },
-                }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    margin="normal"
-                    required
-                    fullWidth
-                    id="email"
-                    label="Email or Phone Number"
-                    autoComplete="username"
-                    autoFocus
-                    sx={{
-                      backgroundColor: '#333',
-                      borderRadius: 1,
-                      input: { color: '#ffffff' },
+              {!requires2FA ? (
+                <>
+                  <Controller
+                    name="email"
+                    control={control}
+                    defaultValue=""
+                    rules={{
+                      required: 'Email is required',
+                      pattern: {
+                        value:
+                          /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                        message: 'Invalid email address',
+                      },
                     }}
-                    error={!!errors.email}
-                    helperText={errors.email?.message}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        margin="normal"
+                        required
+                        fullWidth
+                        id="email"
+                        label="Email or Phone Number"
+                        autoComplete="username"
+                        autoFocus
+                        sx={{
+                          backgroundColor: '#333',
+                          borderRadius: 1,
+                          input: { color: '#ffffff' },
+                        }}
+                        error={!!errors.email}
+                        helperText={errors.email?.message}
+                      />
+                    )}
                   />
-                )}
-              />
-              <Controller
-                name="password"
-                control={control}
-                defaultValue=""
-                rules={{
-                  required: 'Password is required',
-                  minLength: {
-                    value: 6,
-                    message: 'Password must be at least 6 characters',
-                  },
-                }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    margin="normal"
-                    required
-                    fullWidth
+                  <Controller
                     name="password"
-                    label="Password"
-                    type="password"
-                    id="password"
-                    autoComplete="current-password"
-                    sx={{
-                      backgroundColor: '#333',
-                      borderRadius: 1,
-                      input: { color: '#ffffff' },
+                    control={control}
+                    defaultValue=""
+                    rules={{
+                      required: 'Password is required',
+                      minLength: {
+                        value: 6,
+                        message: 'Password must be at least 6 characters',
+                      },
                     }}
-                    error={!!errors.password}
-                    helperText={errors.password?.message}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        margin="normal"
+                        required
+                        fullWidth
+                        name="password"
+                        label="Password"
+                        type="password"
+                        id="password"
+                        autoComplete="current-password"
+                        sx={{
+                          backgroundColor: '#333',
+                          borderRadius: 1,
+                          input: { color: '#ffffff' },
+                        }}
+                        error={!!errors.password}
+                        helperText={errors.password?.message}
+                      />
+                    )}
                   />
-                )}
-              />
+                </>
+              ) : (
+                <Controller
+                  name="token"
+                  control={control}
+                  defaultValue=""
+                  rules={{
+                    required: '2FA Code is required',
+                    minLength: {
+                      value: 6,
+                      message: 'Code must be 6 digits',
+                    },
+                  }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      margin="normal"
+                      required
+                      fullWidth
+                      name="token"
+                      label="Authentication Code"
+                      type="text"
+                      id="token"
+                      autoFocus
+                      autoComplete="one-time-code"
+                      sx={{
+                        backgroundColor: '#333',
+                        borderRadius: 1,
+                        input: {
+                          color: '#ffffff',
+                          letterSpacing: 4,
+                          textAlign: 'center',
+                        },
+                      }}
+                      error={!!errors.token}
+                      helperText={errors.token?.message}
+                    />
+                  )}
+                />
+              )}
+
               {error && (
                 <Typography
                   color="error"
-                  sx={{ textAlign: 'center', color: '#a80000' }}
+                  sx={{ textAlign: 'center', color: '#a80000', mt: 1 }}
                 >
                   {error}
                 </Typography>
@@ -219,20 +281,22 @@ const Login = () => {
                 variant="contained"
                 sx={{ mt: 3, mb: 2, padding: 1.5 }}
               >
-                Login
+                {requires2FA ? 'Verify' : 'Login'}
               </Button>
               <Box sx={{ textAlign: 'right' }}>
-                <Link
-                  onClick={handleForgotClk}
-                  variant="body2"
-                  sx={{
-                    color: '#ffffff',
-                    textDecoration: 'none',
-                    '&:hover': { color: '#a80000' },
-                  }}
-                >
-                  Forgot Password?
-                </Link>
+                {!requires2FA && (
+                  <Link
+                    onClick={handleForgotClk}
+                    variant="body2"
+                    sx={{
+                      color: '#ffffff',
+                      textDecoration: 'none',
+                      '&:hover': { color: '#a80000' },
+                    }}
+                  >
+                    Forgot Password?
+                  </Link>
+                )}
               </Box>
             </Box>
 
