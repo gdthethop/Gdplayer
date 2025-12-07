@@ -278,6 +278,36 @@ const VideoPlayer = () => {
     }
   };
 
+  const controlsTimeoutRef = useRef(null);
+
+  const handleMouseMove = () => {
+    setShowControls(true);
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
+    }
+    controlsTimeoutRef.current = setTimeout(() => {
+      if (isPlaying) {
+        setShowControls(false);
+      }
+    }, 2500);
+  };
+
+  const handleMouseLeave = () => {
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
+    }
+    setShowControls(false);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (controlsTimeoutRef.current) {
+        clearTimeout(controlsTimeoutRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <Box
       sx={{ backgroundColor: '#0f0f0f', color: 'white', minHeight: '100vh' }}
@@ -307,8 +337,9 @@ const VideoPlayer = () => {
                 {/* Video Player Container */}
                 <Box
                   ref={videoContainerRef}
+                  onMouseMove={handleMouseMove}
                   onMouseEnter={() => setShowControls(true)}
-                  onMouseLeave={() => setShowControls(false)}
+                  onMouseLeave={handleMouseLeave}
                   sx={{
                     width: '100%',
                     overflow: 'hidden',

@@ -43,9 +43,7 @@ const CommentSection = ({ videoId }) => {
       date: date, // Use the current date
     };
     // Log comment data before submission
-    console.log('Submitting comment data:', commentData); // Log comment data before submission
-    console.log('Submit function called'); // Log to check if the function is executed
-    console.log('User ID:', user.id); // Log user ID for debugging
+
     if (!user || !user.id) {
       console.error(
         'User is not logged in or user ID is undefined. Cannot submit comment.'
@@ -54,7 +52,7 @@ const CommentSection = ({ videoId }) => {
     }
 
     const resultAction = await dispatch(submitComment(commentData)); // Dispatch the action to submit the comment
-    console.log('Result of comment submission:', resultAction); // Log the result of the submission
+
     if (submitComment.fulfilled.match(resultAction)) {
       // If the submission was successful, update the comment list
       setCommentList((prevState) => [...prevState, commentData]);

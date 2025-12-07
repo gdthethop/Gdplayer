@@ -18,10 +18,8 @@ function Home() {
         const data = response.data;
 
         if (Array.isArray(data) && data.length > 0) {
-          // Set the latest video (assuming the API returns them in order or we pick the last one)
-          // Ideally backend sorts it, but here we take the last one or sort by date if available.
-          // For now, assuming chronological order, last is latest.
-          setLatestVideo(data[data.length - 1]);
+          // Set the latest video (Backend returns sorted by createdAt: -1, so first is latest)
+          setLatestVideo(data[0]);
 
           const groupedData = {};
           data.forEach((video) => {
