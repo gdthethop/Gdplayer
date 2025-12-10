@@ -1,64 +1,72 @@
-# Gdplayer
+# GdPlayer Frontend
 
-Gdplayer is a React-based video player application designed to provide a seamless and interactive video streaming experience. It features user authentication, video recommendations, and a clean, modern UI built with React and Material-UI.
+> **Version:** 1.3.0  
+> **Status:** Production Ready
 
-## Features
+## 🎯 Main Goal
 
-- User signup and login functionality
-- Video playback with custom controls
-- Video recommendations based on user preferences
-- Responsive design for desktop and mobile devices
-- Integration with backend services for video data and user management
-- State management using Redux Toolkit
-- Form handling with React Hook Form
+**GdPlayer** aims to deliver a premium, "Netflix-meets-YouTube" viewing experience. We bridge the gap between aesthetic appeal and functional power, providing users with a sleek, dark-mode cinema interface for discovering, watching, and uploading high-quality video content.
 
-## Getting Started
+## ✨ Key Features
 
-### Prerequisites
+### 🖥️ Immersive User Interface
+- **Premium Design:** Glassmorphism effects, smooth micro-interactions, and a cohesive dark theme.
+- **Responsive Layout:** Optimized for 4K desktops, laptops, tablets, and mobile devices.
+- **Custom Video Player:** A bespoke player with custom controls, scrubbing, and overlay UI (not just the default browser player).
 
-- Node.js (v14 or higher recommended)
-- npm (comes with Node.js)
+### 🎬 Creator Studio & Uploads
+- **Drag & Drop Uploads:** Intuitive upload zone with progress visualization.
+- **Video Management:** Edit metadata, privacy settings, and playlists.
+- **Creator Dashboard:** Analytics and content management tools.
 
-### Installation
+### 👤 User Experience
+- **Smart Recommendations:** Algorithms to suggest content based on viewing history.
+- **Social Interaction:** Like, comment, and subscribe to creators.
+- **Library Management:** Watch Later, History, and Custom Playlists.
+- **Profile Customization:** Avatar uploads and account settings.
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/gdthethop/Gdplayer.git
-   ```
-2. Navigate to the project directory:
-   ```bash
-   cd Gdplayer
-   ```
-3. Install dependencies:
+## 🛠️ Tech Stack
+
+- **Core:** React 19
+- **State Management:** Redux Toolkit
+- **Routing:** React Router v6
+- **Styling:** Material-UI (MUI) v6 + Custom CSS
+- **Network:** Axios with robust interceptors (Auto-logout on 401)
+
+## 🚀 Getting Started
+
+1. **Install Dependencies:**
    ```bash
    npm install
    ```
 
-### Running the Application
+2. **Configure Environment:**
+   Create a `.env` file:
+   ```env
+   REACT_APP_BACKEND_URL=https://your-backend-url.com
+   ```
 
-Start the development server:
-```bash
-npm start
-```
-Open [http://localhost:3000](http://localhost:3000) in your browser to view the app.
+3. **Start Local Development:**
+   ```bash
+   npm start
+   ```
 
-### Code Formatting
+4. **Deploy:**
+   Builds are optimized for GitHub Pages or static serving.
+   ```bash
+   npm run deploy
+   ```
 
-## Future Updates
+## 📅 Version History
 
-- Enhanced video search and filtering options
-- User profile management and settings
-- Improved recommendation algorithms
-- Dark mode support
-- Video comments and likes
-- Performance optimizations and bug fixes
+- **v1.3.0** (Current):
+  - Added "Back to Home" navigation in Upload flow.
+  - Fixed S3 CORS integration for production.
+  - Enhanced Authentication flows (Forgot Password, 2FA).
+  - Production deployment configurations.
 
-## Learn More
+- **v1.2.0**: Initial Release of Creator Studio.
+- **v1.0.0**: Alpha launch.
 
-- [React documentation](https://reactjs.org/)
-- [Redux Toolkit documentation](https://redux-toolkit.js.org/)
-- [Material-UI documentation](https://mui.com/)
-
-## License
-
-This project is licensed under the MIT License.
+---
+*Built with ❤️ by the GdPlayer Team*

@@ -18,8 +18,11 @@ import LockIcon from '@mui/icons-material/Lock';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import axios from 'axios';
 import PlaylistSelector from './PlaylistSelector';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { useNavigate } from 'react-router-dom';
 
 const UploadVideo = () => {
+  const navigate = useNavigate();
   const { user, token } = useSelector((state) => state.auth);
 
   // UI State
@@ -125,8 +128,17 @@ const UploadVideo = () => {
                 }
               );
 
+              const rawETag =
+                partResponse.headers.etag || partResponse.headers.ETag;
+
+              if (!rawETag) {
+                throw new Error(
+                  'ETag header missing. Please ensure S3 CORS configuration exposes the "ETag" header.'
+                );
+              }
+
               uploadedParts.push({
-                ETag: partResponse.headers.etag.replace(/"/g, ''),
+                ETag: rawETag.replace(/"/g, ''),
                 PartNumber: i + 1,
               });
             }
@@ -177,7 +189,7 @@ const UploadVideo = () => {
           handleGenerateThumbnails(s3Url);
         } catch (error) {
           console.error('Upload failed', error);
-          alert('Upload failed. Please try again.');
+          alert(`Upload failed: ${error.message || 'Please try again.'}`);
           setUploading(false);
           setFile(null);
         }
@@ -333,6 +345,20 @@ const UploadVideo = () => {
         color: '#fff',
       }}
     >
+      <Button
+        startIcon={<ArrowBackIcon />}
+        onClick={() => navigate('/home')}
+        sx={{
+          mb: 2,
+          color: '#aaa',
+          textTransform: 'none',
+          '&:hover': { color: '#fff', backgroundColor: 'transparent' },
+        }}
+        disableRipple
+      >
+        Back to Home
+      </Button>
+
       <Typography
         variant="h4"
         sx={{ mb: 4, fontWeight: 'bold', fontFamily: '"Outfit", sans-serif' }}
