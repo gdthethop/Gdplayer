@@ -20,6 +20,9 @@ const initialState = {
   error: null,
 };
 
+const getBackendUrl = () =>
+  process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+
 /**
  * Async thunk to fetch video details by ID.
  * Sends GET request to backend video details endpoint.
@@ -27,9 +30,7 @@ const initialState = {
 export const fetchVideoDetails = createAsyncThunk(
   'video/fetchVideoDetails',
   async (id) => {
-    const response = await axios.get(
-      `${process.env.REACT_APP_BACKEND_URL}/api/videos/${id}`
-    );
+    const response = await axios.get(`${getBackendUrl()}/api/videos/${id}`);
     return response.data;
   }
 );
@@ -42,7 +43,7 @@ export const fetchVideoDetailsByShortCode = createAsyncThunk(
   'video/fetchVideoDetailsByShortCode',
   async (shortCode) => {
     const response = await axios.get(
-      `${process.env.REACT_APP_BACKEND_URL}/api/videos/short/${shortCode}`
+      `${getBackendUrl()}/api/videos/short/${shortCode}`
     );
     return response.data;
   }
@@ -56,7 +57,7 @@ export const updateVideoViewsById = createAsyncThunk(
   'video/updateVideoViewsById',
   async (id) => {
     const response = await axios.patch(
-      `${process.env.REACT_APP_BACKEND_URL}/api/videos/${id}/incrementViews`
+      `${getBackendUrl()}/api/videos/${id}/incrementViews`
     );
     return response.data;
   }
@@ -70,7 +71,7 @@ export const updateVideoViewsByShortCode = createAsyncThunk(
   'video/updateVideoViewsByShortCode',
   async (shortCode) => {
     const response = await axios.patch(
-      `${process.env.REACT_APP_BACKEND_URL}/api/videos/short/${shortCode}/incrementViews`
+      `${getBackendUrl()}/api/videos/short/${shortCode}/incrementViews`
     );
     return response.data;
   }
@@ -84,7 +85,7 @@ export const submitComment = createAsyncThunk(
   'video/submitComment',
   async (commentData) => {
     const response = await axios.post(
-      `${process.env.REACT_APP_BACKEND_URL}/api/videos/comment`,
+      `${getBackendUrl()}/api/comments/${commentData.videoId}/comments`,
       commentData
     );
     return response.data;

@@ -121,11 +121,13 @@ const Login = () => {
           >
             {/* Header */}
             <Box
+              onClick={() => navigate('/')}
               sx={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginBottom: 3,
+                cursor: 'pointer',
               }}
             >
               <img
@@ -138,6 +140,17 @@ const Login = () => {
                 sx={{ color: '#a80000', fontWeight: 'bold' }}
               >
                 Gd Player
+                <Typography
+                  component="span"
+                  sx={{
+                    fontSize: '10px',
+                    color: 'gray',
+                    marginLeft: '4px',
+                    verticalAlign: 'super',
+                  }}
+                >
+                  v1.3.0
+                </Typography>
               </Typography>
             </Box>
 

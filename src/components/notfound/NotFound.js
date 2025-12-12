@@ -46,6 +46,18 @@ const NotFound = () => {
       >
         Go Home
       </Button>
+      <Typography
+        variant="body2"
+        sx={{
+          marginTop: 8,
+          marginBottom: 4,
+          color: '#b3b3b3',
+          textAlign: 'center',
+          width: '100%',
+        }}
+      >
+        &copy; 2025 Gd Player & Gd Enterprises. All rights reserved.
+      </Typography>
     </Box>
   );
 };

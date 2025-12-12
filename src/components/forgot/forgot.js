@@ -126,7 +126,13 @@ const ForgotPassword = () => {
           >
             {/* Header */}
             <Box
-              sx={{ display: 'flex', alignItems: 'center', marginBottom: 3 }}
+              onClick={() => navigate('/')}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                marginBottom: 3,
+                cursor: 'pointer',
+              }}
             >
               <img
                 src={process.env.PUBLIC_URL + '/logo.png'}
@@ -138,6 +144,17 @@ const ForgotPassword = () => {
                 sx={{ color: '#a80000', fontWeight: 'bold' }}
               >
                 Gd Player
+                <Typography
+                  component="span"
+                  sx={{
+                    fontSize: '10px',
+                    color: 'gray',
+                    marginLeft: '4px',
+                    verticalAlign: 'super',
+                  }}
+                >
+                  v1.3.0
+                </Typography>
               </Typography>
             </Box>
 

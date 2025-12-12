@@ -9,6 +9,10 @@ import {
   TextField,
   Paper,
   IconButton,
+  Select,
+  MenuItem,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import ThumbDownIcon from '@mui/icons-material/ThumbDown';
@@ -19,7 +23,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { submitComment } from '../../redux/videoSlice';
 
-const CommentItem = ({ comment, user, token, onReply }) => {
+const CommentItem = ({ comment, user, token, onReply, onShowMessage }) => {
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [replyText, setReplyText] = useState('');
 
@@ -41,7 +45,11 @@ const CommentItem = ({ comment, user, token, onReply }) => {
 
   const handleVote = async (type) => {
     // type: 'like' or 'dislike'
-    if (!userId) return alert('Please login to vote');
+    if (!userId) {
+      if (onShowMessage) onShowMessage('Please login to vote', 'warning');
+      else alert('Please login to vote');
+      return;
+    }
 
     try {
       // Optimistic update
@@ -63,14 +71,18 @@ const CommentItem = ({ comment, user, token, onReply }) => {
       }
 
       const currentToken = token || localStorage.getItem('token'); // Use prop token, fallback to localStorage
+      const backendUrl =
+        process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+
       await axios.put(
-        `${process.env.REACT_APP_BACKEND_URL}/api/comments/${comment._id}/${type}`, // Endpoint needs to match route
+        `${backendUrl}/api/comments/${comment._id}/${type}`, // Endpoint needs to match route
         {},
         { headers: { Authorization: `Bearer ${currentToken}` } }
       );
     } catch (e) {
       console.error('Vote failed', e);
-      // Revert? (Complex without deep prop refresh)
+      if (onShowMessage) onShowMessage('Vote failed', 'error');
+      // Revert logic could be added here
     }
   };
 
@@ -196,6 +208,7 @@ const CommentItem = ({ comment, user, token, onReply }) => {
               user={user}
               token={token}
               onReply={onReply}
+              onShowMessage={onShowMessage}
             />
           ))}
         </Box>
@@ -210,40 +223,108 @@ const CommentSection = ({ videoId }) => {
   const token = useSelector((state) => state.auth.token); // Get token
   const [mainComment, setMainComment] = useState('');
   const [commentList, setCommentList] = useState([]);
+  const [sortBy, setSortBy] = useState('newest'); // 'newest' | 'top'
+
+  // Snackbar state
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'info',
+  });
+
+  const handleShowMessage = (message, severity = 'info') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === 'clickaway') return;
+    setSnackbar({ ...snackbar, open: false });
+  };
 
   const fetchVideoComments = async () => {
+    const backendUrl =
+      process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+    console.log(
+      `Fetching comments from: ${backendUrl}/api/comments/${videoId}/comments`
+    );
+
     try {
-      const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_URL}/api/videos/${videoId}/comments`
+      const response = await axios.get(
+        `${backendUrl}/api/comments/${videoId}/comments`
       );
-      const data = await response.json();
-      setCommentList(data);
+      setCommentList(response.data);
     } catch (e) {
       console.error('Failed to fetch comments', e);
+      // Log detailed error info
+      if (e.response) {
+        console.error('Response data:', e.response.data);
+        console.error('Response status:', e.response.status);
+      } else if (e.request) {
+        console.error('Request made but no response:', e.request);
+      } else {
+        console.error('Error message:', e.message);
+      }
+      handleShowMessage(`Failed to load comments: ${e.message}`, 'error');
     }
   };
 
   useEffect(() => {
-    if (videoId) fetchVideoComments();
+    // Only fetch if videoId is defined and not 'undefined' string
+    if (videoId && videoId !== 'undefined') {
+      fetchVideoComments();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoId]);
 
   const handleSubmit = async (text, parentId = null) => {
-    if (!user || !user.id || !text.trim()) return;
+    console.log('handleSubmit called with:', { text, parentId, videoId, user });
+
+    if (!user) {
+      console.error('User is missing in handleSubmit');
+      handleShowMessage('You must be logged in to comment', 'error');
+      return;
+    }
+
+    const userId = user.id || user._id;
+    if (!userId) {
+      console.error('User ID is missing:', user);
+      handleShowMessage('User profile error. Please relogin.', 'error');
+      return;
+    }
+
+    if (!text.trim()) {
+      return; // Button should be disabled anyway
+    }
 
     const commentData = {
       text: text,
       videoId: videoId,
-      user_id: user.id,
-      name: user.name,
+      user_id: userId,
+      name: user.name || 'Anonymous',
       date: new Date().toISOString(),
       parentId: parentId,
     };
 
-    const action = await dispatch(submitComment(commentData));
-    if (submitComment.fulfilled.match(action)) {
-      if (!parentId) setMainComment('');
-      fetchVideoComments(); // Refresh to rebuild tree
+    console.log('Dispatching submitComment with:', commentData);
+
+    try {
+      const action = await dispatch(submitComment(commentData));
+      console.log('submitComment action result:', action);
+
+      if (submitComment.fulfilled.match(action)) {
+        if (!parentId) setMainComment('');
+        fetchVideoComments(); // Refresh to rebuild tree
+        handleShowMessage('Comment added', 'success');
+      } else {
+        console.error('submitComment failed:', action.error);
+        handleShowMessage(
+          `Failed to post comment: ${action.error?.message || 'Unknown error'}`,
+          'error'
+        );
+      }
+    } catch (err) {
+      console.error('Unexpected error in handleSubmit:', err);
+      handleShowMessage('An unexpected error occurred', 'error');
     }
   };
 
@@ -251,6 +332,8 @@ const CommentSection = ({ videoId }) => {
   const commentTree = useMemo(() => {
     const map = {};
     const roots = [];
+
+    if (!Array.isArray(commentList)) return [];
 
     // Copy and map
     commentList.forEach((c) => {
@@ -265,15 +348,54 @@ const CommentSection = ({ videoId }) => {
       }
     });
 
-    // Sort by date desc for roots? Or asc? usually top comments are popular or newest.
-    return roots.sort((a, b) => new Date(b.date) - new Date(a.date));
-  }, [commentList]);
+    // Sort
+    return roots.sort((a, b) => {
+      if (sortBy === 'top') {
+        const scoreA = (a.likes?.length || 0) - (a.dislikes?.length || 0);
+        const scoreB = (b.likes?.length || 0) - (b.dislikes?.length || 0);
+        return scoreB - scoreA; // Descending score
+      } else {
+        // Newest
+        return new Date(b.date) - new Date(a.date); // Descending date
+      }
+    });
+  }, [commentList, sortBy]);
 
   return (
     <Box sx={{ mt: 4, color: 'white' }}>
-      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3 }}>
-        {commentList.length} Comments
-      </Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 3,
+        }}
+      >
+        <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+          {commentList.length} Comments
+        </Typography>
+
+        {/* Sort Dropdown */}
+        <Select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          sx={{
+            color: 'white',
+            '.MuiOutlinedInput-notchedOutline': { borderColor: '#555' },
+            '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#888' },
+            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+              borderColor: 'white',
+            },
+            height: 40,
+            fontSize: '0.9rem',
+          }}
+          variant="outlined"
+          size="small"
+        >
+          <MenuItem value="newest">Newest First</MenuItem>
+          <MenuItem value="top">Top Rated</MenuItem>
+        </Select>
+      </Box>
 
       {/* Main Comment Input */}
       {user ? (
@@ -319,9 +441,25 @@ const CommentSection = ({ videoId }) => {
             user={user}
             token={token}
             onReply={handleSubmit}
+            onShowMessage={handleShowMessage}
           />
         ))}
       </Box>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

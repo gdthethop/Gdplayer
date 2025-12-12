@@ -103,7 +103,7 @@ const HeroSection = ({ video }) => {
           flexDirection: 'column',
           justifyContent: 'center',
           paddingLeft: { xs: '4%', md: '60px' },
-          width: { xs: '100%', md: '50%' },
+          width: { xs: '100%', md: '62%' },
           maxWidth: '900px',
           paddingTop: '60px', // Offset header
         }}

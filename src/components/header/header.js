@@ -59,6 +59,17 @@ const Header = () => {
           onClick={handelClk}
         >
           Gd Player
+          <Typography
+            component="span"
+            sx={{
+              fontSize: '10px',
+              color: 'gray',
+              marginLeft: '4px',
+              verticalAlign: 'super',
+            }}
+          >
+            v1.3.1
+          </Typography>
         </Typography>
       </Box>
 

@@ -110,11 +110,13 @@ const Signup = () => {
           >
             {/* Header */}
             <Box
+              onClick={() => navigate('/')}
               sx={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginBottom: 2,
+                cursor: 'pointer',
               }}
             >
               <img
@@ -124,6 +126,17 @@ const Signup = () => {
               />
               <Typography variant="h6" sx={{ color: '#a80000' }}>
                 Gd Player
+                <Typography
+                  component="span"
+                  sx={{
+                    fontSize: '10px',
+                    color: 'gray',
+                    marginLeft: '4px',
+                    verticalAlign: 'super',
+                  }}
+                >
+                  v1.3.0
+                </Typography>
               </Typography>
             </Box>
 

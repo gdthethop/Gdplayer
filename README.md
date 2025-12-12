@@ -1,6 +1,6 @@
 # GdPlayer Frontend
 
-> **Version:** 1.3.0  
+> **Version:** 1.3.1  
 > **Status:** Production Ready
 
 ## 🎯 Main Goal
@@ -59,7 +59,12 @@
 
 ## 📅 Version History
 
-- **v1.3.0** (Current):
+- **v1.3.1**: 
+  - **Comment System Overhaul**: Fixed critial bugs in comment fetching (ID vs shortCode resolution) and frontend rendering.
+  - **UI Polish**: Refined Hero Section dimensions to align with Golden Ratio principles.
+  - **Bug Fixes**: Resolved "User profile error" by patching auth responses to include robust ID data.
+
+- **v1.3.0** (Previous):
   - Added "Back to Home" navigation in Upload flow.
   - Fixed S3 CORS integration for production.
   - Enhanced Authentication flows (Forgot Password, 2FA).
