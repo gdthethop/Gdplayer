@@ -7,7 +7,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import theme from './theme';
 // import reportWebVitals from './reportWebVitals';
-import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
+import { HashRouter, Route, Routes, Navigate } from 'react-router-dom';
 import Signup from './components/signup/signup';
 import ForgotPassword from './components/forgot/forgot';
 import Login from './components/login/login';
@@ -33,7 +33,7 @@ root.render(
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <ErrorBoundary>
-          <BrowserRouter>
+          <HashRouter>
             <Routes>
               <Route path="/" element={<Navigate to="/home" replace />} />
               <Route path="/home" element={<Home />} />
@@ -92,7 +92,7 @@ root.render(
               />
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </BrowserRouter>
+          </HashRouter>
         </ErrorBoundary>
       </ThemeProvider>
     </Provider>
