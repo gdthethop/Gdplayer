@@ -250,9 +250,10 @@ const CustomControls = ({
               src={process.env.PUBLIC_URL + '/logo.png'}
               alt="Play"
               style={{
-                width: '50%',
+                width: '35%',
                 height: 'auto',
-                marginLeft: '4px',
+                marginLeft: '2px', // Fine-tuned for the smaller size
+                opacity: 0.9, // Subtle transparency for premium feel
               }}
             />
           )}
