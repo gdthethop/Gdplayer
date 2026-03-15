@@ -1,7 +1,7 @@
 # GdPlayer Frontend
 
-> **Version:** 1.3.1  
-> **Status:** Production Ready
+> **Version:** 1.3.2  
+> **Status:** Production Ready (PWA Enabled)
 
 ## 🎯 Main Goal
 
@@ -58,6 +58,13 @@
    ```
 
 ## 📅 Version History
+
+- **v1.3.2**: 
+  - **PWA Integration**: Full Progressive Web App support. Now installable on all devices with offline manifests and premium splash screens.
+  - **Professional Player UI**: Overhauled mobile player with floating "glass" controls, 10s Skip Forward/Backward actions, and a high-precision edge-to-edge seek bar.
+  - **Identity & Branding**: Re-integrated the GdPlayer logo into the center action overlay with enhanced visibility and smooth animations.
+  - **Header Optimization**: Refined mobile header with backdrop blur and professional pill-shaped Authentication buttons.
+  - **Infrastructure**: Fully migrated to high-performance Vercel backend infrastructure.
 
 - **v1.3.1**: 
   - **Comment System Overhaul**: Fixed critial bugs in comment fetching (ID vs shortCode resolution) and frontend rendering.

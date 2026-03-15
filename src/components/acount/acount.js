@@ -15,6 +15,7 @@ import {
   ListItem,
   ListItemText,
   ListItemAvatar,
+  Button,
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -89,32 +90,35 @@ function AccountContainer() {
 
   if (!user) {
     return (
-      <Box sx={{ display: 'flex', gap: 2 }}>
-        <Typography
+      <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+        <Button
           onClick={handleLogin}
           sx={{
             color: 'white',
-            cursor: 'pointer',
-            fontWeight: 600,
-            '&:hover': { color: '#c10000' },
+            textTransform: 'none',
+            fontWeight: 700,
+            fontSize: { xs: '13px', sm: '14px' },
+            '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' },
           }}
         >
           Login
-        </Typography>
-        <Typography
+        </Button>
+        <Button
           onClick={handleSignup}
+          variant="contained"
           sx={{
-            color: '#c10000',
-            cursor: 'pointer',
-            fontWeight: 600,
-            border: '1px solid #c10000',
-            borderRadius: '4px',
-            px: 1,
-            '&:hover': { bgcolor: '#c10000', color: 'white' },
+            bgcolor: '#c10000',
+            color: 'white',
+            textTransform: 'none',
+            fontWeight: 700,
+            fontSize: { xs: '13px', sm: '14px' },
+            borderRadius: '24px',
+            px: { xs: 2, sm: 3 },
+            '&:hover': { bgcolor: '#a00000' },
           }}
         >
           Sign Up
-        </Typography>
+        </Button>
       </Box>
     );
   }

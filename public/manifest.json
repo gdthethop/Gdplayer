@@ -1,6 +1,7 @@
 {
-  "short_name": "React App",
-  "name": "Gd Player",
+  "short_name": "GdPlayer",
+  "name": "Gd Player - Professional Video Streaming",
+  "description": "Gd Player is a professional video streaming platform optimized for a premium viewing experience.",
   "icons": [
     {
       "src": "favicon.ico",
@@ -10,16 +11,20 @@
     {
       "src": "logo.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
       "src": "logo.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
   "start_url": ".",
   "display": "standalone",
   "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "background_color": "#000000",
+  "orientation": "any",
+  "scope": "/"
 }

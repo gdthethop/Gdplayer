@@ -21,6 +21,9 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import CheckIcon from '@mui/icons-material/Check';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SpeedIcon from '@mui/icons-material/Speed';
+import Replay10Icon from '@mui/icons-material/Replay10';
+import Forward10Icon from '@mui/icons-material/Forward10';
+import ClosedCaptionIcon from '@mui/icons-material/ClosedCaption';
 import { styled } from '@mui/material/styles';
 
 const TinyText = styled(Typography)({
@@ -46,11 +49,12 @@ const CustomControls = ({
   onFullscreen,
   isFullscreen,
   showControls,
-  // New Props
   onPip,
   isPip,
   playbackRate,
   onPlaybackRateChange,
+  onSkipForward,
+  onSkipBackward,
 }) => {
   // Settings Menu State
   const [anchorEl, setAnchorEl] = useState(null);
@@ -140,164 +144,248 @@ const CustomControls = ({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.4)', // Slight overlay
+        backgroundColor: isPlaying ? 'transparent' : 'rgba(0, 0, 0, 0.4)',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'space-between',
         zIndex: 10,
-        opacity: showControls || !isPlaying || Boolean(anchorEl) ? 1 : 0, // Keep visible if menu is open
-        transition: 'opacity 0.3s ease-in-out',
+        opacity: showControls || !isPlaying || Boolean(anchorEl) ? 1 : 0,
+        transition: 'opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
         pointerEvents:
           showControls || !isPlaying || Boolean(anchorEl) ? 'auto' : 'none',
       }}
     >
-      {/* Center Play Button (Logo) */}
+      {/* Top Controls (Settings & CC) */}
       <Box
         sx={{
+          position: 'absolute',
+          top: { xs: 15, sm: 20 },
+          right: { xs: 15, sm: 20 },
+          display: 'flex',
+          gap: 1.5,
+        }}
+      >
+        <IconButton
+          sx={{
+            color: 'white',
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+            backdropFilter: 'blur(10px)',
+            borderRadius: '12px',
+            '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.6)' },
+          }}
+        >
+          <ClosedCaptionIcon
+            sx={{ fontSize: { xs: 24, sm: 26 }, opacity: 0.8 }}
+          />
+        </IconButton>
+        <IconButton
+          onClick={handleSettingsClick}
+          sx={{
+            color: 'white',
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+            backdropFilter: 'blur(10px)',
+            borderRadius: '12px',
+            '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.6)' },
+          }}
+        >
+          <SettingsIcon sx={{ fontSize: { xs: 24, sm: 26 } }} />
+        </IconButton>
+      </Box>
+
+      {/* Center Controls (Skip/Play/Skip) */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          flex: 1,
+          gap: { xs: 3, sm: 6 },
         }}
-        onClick={onPlayPause}
       >
-        {!isPlaying && (
-          <Box
-            sx={{
-              width: 80,
-              height: 80,
-              borderRadius: '50%',
+        <IconButton
+          onClick={onSkipBackward}
+          sx={{
+            color: 'white',
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+            backdropFilter: 'blur(10px)',
+            width: { xs: 45, sm: 60 },
+            height: { xs: 45, sm: 60 },
+            '&:hover': {
               backgroundColor: 'rgba(0, 0, 0, 0.6)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              border: '2px solid white',
-              '&:hover': {
-                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                transform: 'scale(1.1)',
-                transition: 'all 0.2s',
-              },
-            }}
-          >
+              transform: 'scale(1.1)',
+            },
+            transition: 'all 0.2s',
+          }}
+        >
+          <Replay10Icon sx={{ fontSize: { xs: 30, sm: 38 } }} />
+        </IconButton>
+
+        <Box
+          onClick={onPlayPause}
+          sx={{
+            width: { xs: 80, sm: 100 },
+            height: { xs: 80, sm: 100 },
+            borderRadius: '50%',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(12px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+            transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+            '&:hover': {
+              backgroundColor: 'rgba(0, 0, 0, 0.7)',
+              transform: 'scale(1.08)',
+              borderColor: 'rgba(255, 255, 255, 0.4)',
+            },
+          }}
+        >
+          {isPlaying ? (
+            <PauseIcon sx={{ color: 'white', fontSize: { xs: 45, sm: 55 } }} />
+          ) : (
             <img
               src={process.env.PUBLIC_URL + '/logo.png'}
               alt="Play"
-              style={{ width: '40px', height: 'auto' }}
-            />
-          </Box>
-        )}
-      </Box>
-
-      {/* Bottom Controls Bar */}
-      <Box
-        sx={{
-          background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)',
-          padding: '10px 20px',
-        }}
-        onClick={(e) => e.stopPropagation()} // Prevent clicking bar from pausing
-      >
-        {/* Progress Bar */}
-        <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: 1 }}>
-          <Slider
-            size="small"
-            value={currentTime}
-            min={0}
-            max={duration || 100} // Avoid 0 max
-            onChange={onSeek}
-            onChangeCommitted={onSeekMouseUp}
-            onMouseDown={onSeekMouseDown}
-            sx={{
-              color: '#ff0000', // YouTube red
-              height: 4,
-              '& .MuiSlider-thumb': {
-                width: 12, // Initially smaller thumb like YouTube
-                height: 12,
-                transition: '0.3s cubic-bezier(.47,1.64,.41,.8)',
-                '&:before': {
-                  boxShadow: '0 2px 12px 0 rgba(0,0,0,0.4)',
-                },
-                '&:hover, &.Mui-focusVisible': {
-                  boxShadow: `0px 0px 0px 8px ${'rgb(255 255 255 / 16%)'}`,
-                  width: 20, // Grow on hover
-                  height: 20,
-                },
-                '&.Mui-active': {
-                  width: 20,
-                  height: 20,
-                },
-              },
-              '& .MuiSlider-rail': {
-                opacity: 0.28,
-                color: '#bfbfbf',
-              },
-            }}
-          />
-        </Box>
-
-        {/* Controls Row */}
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-        >
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <IconButton onClick={onPlayPause} sx={{ color: 'white' }}>
-              {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
-            </IconButton>
-
-            <IconButton onClick={onMute} sx={{ color: 'white' }}>
-              {isMuted || volume === 0 ? <VolumeOffIcon /> : <VolumeUpIcon />}
-            </IconButton>
-
-            <Slider
-              size="small"
-              value={isMuted ? 0 : volume}
-              min={0}
-              max={1}
-              step={0.1}
-              onChange={onVolumeChange}
-              sx={{
-                width: 80,
-                color: 'white',
-                '& .MuiSlider-track': { border: 'none' },
-                '& .MuiSlider-thumb': {
-                  width: 12,
-                  height: 12,
-                  backgroundColor: '#fff',
-                  '&:before': {
-                    boxShadow: '0 4px 8px rgba(0,0,0,0.4)',
-                  },
-                  '&:hover, &.Mui-focusVisible, &.Mui-active': {
-                    boxShadow: 'none',
-                  },
-                },
+              style={{
+                width: '50%',
+                height: 'auto',
+                marginLeft: '4px',
               }}
             />
+          )}
+        </Box>
 
-            <Typography sx={{ color: 'white', fontSize: '14px', ml: 2 }}>
-              {formatTime(currentTime)} / {formatTime(duration)}
-            </Typography>
-          </Stack>
+        <IconButton
+          onClick={onSkipForward}
+          sx={{
+            color: 'white',
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+            backdropFilter: 'blur(10px)',
+            width: { xs: 45, sm: 60 },
+            height: { xs: 45, sm: 60 },
+            '&:hover': {
+              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+              transform: 'scale(1.1)',
+            },
+            transition: 'all 0.2s',
+          }}
+        >
+          <Forward10Icon sx={{ fontSize: { xs: 30, sm: 38 } }} />
+        </IconButton>
+      </Box>
 
-          <Stack direction="row" alignItems="center" spacing={1}>
-            {/* Settings Toggle */}
-            <IconButton onClick={handleSettingsClick} sx={{ color: 'white' }}>
-              <SettingsIcon />
-            </IconButton>
+      {/* Floating Bottom Info (Time & Fullscreen) */}
+      <Box
+        sx={{
+          position: 'absolute',
+          bottom: { xs: 30, sm: 40 },
+          left: { xs: 15, sm: 25 },
+          right: { xs: 15, sm: 25 },
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        {/* Time Display Pill */}
+        <Box
+          sx={{
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(10px)',
+            padding: '6px 16px',
+            borderRadius: '24px',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+          }}
+        >
+          <Typography
+            sx={{
+              color: 'white',
+              fontSize: { xs: '13px', sm: '15px' },
+              fontWeight: 600,
+              letterSpacing: '0.5px',
+            }}
+          >
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </Typography>
+        </Box>
 
-            {/* PiP Button */}
-            {document.pictureInPictureEnabled && (
-              <IconButton onClick={onPip} sx={{ color: 'white' }}>
-                <PictureInPictureAltIcon />
-              </IconButton>
-            )}
+        {/* Fullscreen Icon Circle */}
+        <IconButton
+          onClick={onFullscreen}
+          sx={{
+            color: 'white',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(10px)',
+            borderRadius: '50%',
+            padding: { xs: '10px', sm: '12px' },
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            '&:hover': {
+              backgroundColor: 'rgba(0, 0, 0, 0.7)',
+              transform: 'scale(1.1)',
+            },
+            transition: 'all 0.2s',
+          }}
+        >
+          {isFullscreen ? (
+            <FullscreenExitIcon sx={{ fontSize: { xs: 26, sm: 30 } }} />
+          ) : (
+            <FullscreenIcon sx={{ fontSize: { xs: 26, sm: 30 } }} />
+          )}
+        </IconButton>
+      </Box>
 
-            <IconButton onClick={onFullscreen} sx={{ color: 'white' }}>
-              {isFullscreen ? <FullscreenExitIcon /> : <FullscreenIcon />}
-            </IconButton>
-          </Stack>
-        </Stack>
+      {/* Absolute Bottom Seek Bar */}
+      <Box
+        sx={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          padding: '0 10px',
+          height: '24px',
+          display: 'flex',
+          alignItems: 'flex-end',
+        }}
+      >
+        <Slider
+          size="small"
+          value={currentTime}
+          min={0}
+          max={duration || 100}
+          onChange={onSeek}
+          onChangeCommitted={onSeekMouseUp}
+          onMouseDown={onSeekMouseDown}
+          sx={{
+            color: '#ff0000',
+            height: 3,
+            padding: '10px 0',
+            '& .MuiSlider-thumb': {
+              width: 14,
+              height: 14,
+              transition: '0.3s cubic-bezier(.47,1.64,.41,.8)',
+              '&:before': {
+                boxShadow: '0 2px 12px 0 rgba(0,0,0,0.4)',
+              },
+              '&:hover, &.Mui-focusVisible': {
+                boxShadow: `0px 0px 0px 8px ${'rgb(255 0 0 / 16%)'}`,
+              },
+              '&.Mui-active': {
+                width: 18,
+                height: 18,
+              },
+            },
+            '& .MuiSlider-rail': {
+              opacity: 0.2,
+              color: '#fff',
+            },
+            '& .MuiSlider-track': {
+              border: 'none',
+              height: 3,
+            },
+          }}
+        />
       </Box>
 
       {/* Settings Menu Popover */}

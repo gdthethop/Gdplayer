@@ -16,8 +16,9 @@ const Header = () => {
         display: 'flex',
         position: 'fixed',
         justifyContent: 'space-between',
-        padding: '1rem',
-        background: 'linear-gradient(black, transparent)',
+        padding: { xs: '0.75rem 1rem', md: '1rem 2rem' },
+        background: 'linear-gradient(rgba(0,0,0,0.8), transparent)',
+        backdropFilter: 'blur(5px)',
         zIndex: 1000,
       }}
     >
@@ -30,7 +31,7 @@ const Header = () => {
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          marginLeft: '2rem',
+          marginLeft: 0,
         }}
       >
         <img
@@ -68,7 +69,7 @@ const Header = () => {
               verticalAlign: 'super',
             }}
           >
-            v1.3.1
+            v1.3.2
           </Typography>
         </Typography>
       </Box>
@@ -78,13 +79,9 @@ const Header = () => {
         sx={{
           display: 'flex', // Keep visible on mobile
           alignItems: 'center',
-          gap: '1rem',
-          marginRight: '2rem',
+          gap: { xs: '0.5rem', sm: '1rem' },
+          marginRight: 0,
           height: 'auto', // Set height for desktop view
-          '@media (max-width: 600px)': {
-            gap: '1rem', // Smaller size for mobile
-            marginRight: '2rem',
-          },
         }}
       >
         <SearchComponent />

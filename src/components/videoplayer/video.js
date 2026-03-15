@@ -348,6 +348,24 @@ const VideoPlayer = () => {
     }
   };
 
+  const skipBackward = () => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = Math.max(
+        videoRef.current.currentTime - 10,
+        0
+      );
+    }
+  };
+
+  const skipForward = () => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = Math.min(
+        videoRef.current.currentTime + 10,
+        videoRef.current.duration
+      );
+    }
+  };
+
   // --- Watch History Sync ---
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -504,8 +522,8 @@ const VideoPlayer = () => {
         sx={{
           maxWidth: '1600px',
           margin: 'auto',
-          paddingTop: '80px',
-          paddingX: { xs: 2, md: 4 },
+          paddingTop: { xs: '70px', md: '90px' },
+          paddingX: { xs: 0, sm: 2, md: 4 },
         }}
       >
         <Grid container spacing={3}>
@@ -529,10 +547,15 @@ const VideoPlayer = () => {
                   onMouseLeave={handleMouseLeave}
                   sx={{
                     width: '100%',
-                    overflow: 'hidden',
-                    backgroundColor: 'black',
-                    aspectRatio: '16/9',
+                    backgroundColor: '#000',
                     position: 'relative',
+                    aspectRatio: { xs: 'auto', md: '16/9' },
+                    minHeight: { xs: '220px', sm: '300px', md: 'auto' },
+                    maxHeight: { xs: '70vh', md: 'none' },
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
                   }}
                 >
                   <>
@@ -579,6 +602,8 @@ const VideoPlayer = () => {
                       isPip={isPip}
                       playbackRate={playbackRate}
                       onPlaybackRateChange={handlePlaybackRateChange}
+                      onSkipBackward={skipBackward}
+                      onSkipForward={skipForward}
                     />
                   </>
                 </Box>
@@ -591,6 +616,7 @@ const VideoPlayer = () => {
                     fontWeight: 700,
                     marginTop: '16px',
                     lineHeight: 1.4,
+                    px: { xs: 2, sm: 0 },
                   }}
                 >
                   {videoTitle}
@@ -605,6 +631,7 @@ const VideoPlayer = () => {
                     alignItems: { xs: 'flex-start', sm: 'center' },
                     marginTop: '12px',
                     gap: 2,
+                    px: { xs: 2, sm: 0 },
                   }}
                 >
                   {/* Views & Date (Placeholder for date) */}
@@ -615,13 +642,23 @@ const VideoPlayer = () => {
                   </Typography>
 
                   {/* Action Buttons */}
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      gap: 1,
+                      alignItems: 'center',
+                      width: { xs: '100%', sm: 'auto' },
+                      overflowX: 'auto',
+                      pb: { xs: 1, sm: 0 },
+                    }}
+                  >
                     <Box
                       sx={{
                         display: 'flex',
                         backgroundColor: '#272727',
-                        borderRadius: '20px',
+                        borderRadius: '24px',
                         overflow: 'hidden',
+                        height: '40px',
                       }}
                     >
                       <Button
@@ -631,10 +668,15 @@ const VideoPlayer = () => {
                         }
                         sx={{
                           color: 'white',
-                          padding: '6px 16px',
+                          px: { xs: 2, sm: 3 },
                           textTransform: 'none',
                           borderRight: '1px solid #3f3f3f',
                           borderRadius: 0,
+                          fontSize: '14px',
+                          fontWeight: 600,
+                          backgroundColor: hasLiked
+                            ? 'rgba(255, 255, 255, 0.1)'
+                            : 'transparent',
                           '&:hover': { backgroundColor: '#3f3f3f' },
                         }}
                       >
@@ -651,13 +693,18 @@ const VideoPlayer = () => {
                         }
                         sx={{
                           color: 'white',
-                          padding: '6px 16px',
+                          px: { xs: 2, sm: 3 },
                           textTransform: 'none',
                           borderRadius: 0,
+                          fontSize: '14px',
+                          fontWeight: 600,
+                          backgroundColor: hasDisliked
+                            ? 'rgba(255, 255, 255, 0.1)'
+                            : 'transparent',
                           '&:hover': { backgroundColor: '#3f3f3f' },
                         }}
                       >
-                        {videoDislikes}
+                        {videoDislikes > 0 ? videoDislikes : ''}
                       </Button>
                     </Box>
 
@@ -667,13 +714,22 @@ const VideoPlayer = () => {
                       sx={{
                         backgroundColor: '#272727',
                         color: 'white',
-                        borderRadius: '20px',
-                        padding: '6px 16px',
+                        borderRadius: '24px',
+                        height: '40px',
+                        px: { xs: 2, sm: 3 },
                         textTransform: 'none',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        '& .MuiButton-startIcon': { mr: { xs: 0, sm: 1 } },
                         '&:hover': { backgroundColor: '#3f3f3f' },
                       }}
                     >
-                      Share
+                      <Box
+                        component="span"
+                        sx={{ display: { xs: 'none', sm: 'inline' } }}
+                      >
+                        Share
+                      </Box>
                     </Button>
 
                     <Button
@@ -684,13 +740,22 @@ const VideoPlayer = () => {
                       sx={{
                         backgroundColor: '#272727',
                         color: 'white',
-                        borderRadius: '20px',
-                        padding: '6px 16px',
+                        borderRadius: '24px',
+                        height: '40px',
+                        px: { xs: 2, sm: 3 },
                         textTransform: 'none',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        '& .MuiButton-startIcon': { mr: { xs: 0, sm: 1 } },
                         '&:hover': { backgroundColor: '#3f3f3f' },
                       }}
                     >
-                      {inWatchLater ? 'Saved' : 'Save'}
+                      <Box
+                        component="span"
+                        sx={{ display: { xs: 'none', sm: 'inline' } }}
+                      >
+                        {inWatchLater ? 'Saved' : 'Save'}
+                      </Box>
                     </Button>
                   </Box>
                 </Box>
@@ -699,13 +764,16 @@ const VideoPlayer = () => {
                 {videoUploader && (
                   <Box
                     sx={{
-                      mt: 2,
+                      mt: 3,
                       display: 'flex',
-                      alignItems: 'center',
+                      flexDirection: { xs: 'column', sm: 'row' },
+                      alignItems: { xs: 'flex-start', sm: 'center' },
                       justifyContent: 'space-between',
-                      borderTop: '1px solid #333',
-                      borderBottom: '1px solid #333',
-                      py: 2,
+                      borderTop: '1px solid rgba(255,255,255,0.1)',
+                      borderBottom: '1px solid rgba(255,255,255,0.1)',
+                      py: 2.5,
+                      gap: 2,
+                      px: { xs: 2, sm: 0 },
                     }}
                   >
                     <Box
@@ -713,38 +781,85 @@ const VideoPlayer = () => {
                         display: 'flex',
                         alignItems: 'center',
                         gap: 2,
-                        cursor: 'pointer' /* navigate to profile? */,
+                        cursor: 'pointer',
                       }}
                     >
                       <Avatar
                         src={videoUploader.profileIcon}
                         alt={videoUploader.name}
+                        sx={{
+                          width: 44,
+                          height: 44,
+                          border: '1px solid rgba(255,255,255,0.1)',
+                        }}
                       />
                       <Box>
-                        <Typography variant="subtitle1" fontWeight="bold">
+                        <Typography
+                          variant="subtitle1"
+                          fontWeight="700"
+                          sx={{ fontSize: '16px' }}
+                        >
                           {videoUploader.name}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{ color: '#aaa', fontSize: '13px' }}
+                        >
+                          Creator
                         </Typography>
                       </Box>
                     </Box>
+                    <Button
+                      variant="contained"
+                      onClick={handleSubscribe}
+                      sx={{
+                        backgroundColor: isSubscribed
+                          ? 'rgba(255,255,255,0.1)'
+                          : 'white',
+                        color: isSubscribed ? 'white' : 'black',
+                        borderRadius: '24px',
+                        px: 4,
+                        py: 1,
+                        fontSize: '14px',
+                        fontWeight: '700',
+                        textTransform: 'none',
+                        '&:hover': {
+                          backgroundColor: isSubscribed
+                            ? 'rgba(255,255,255,0.2)'
+                            : '#e0e0e0',
+                        },
+                      }}
+                    >
+                      {isSubscribed ? 'Subscribed' : 'Subscribe'}
+                    </Button>
                   </Box>
                 )}
 
                 {/* Description Box */}
                 <Box
                   sx={{
-                    marginTop: '16px',
-                    backgroundColor: '#272727',
-                    borderRadius: '12px',
-                    padding: '12px',
-                    '&:hover': { backgroundColor: '#3f3f3f' },
+                    marginTop: '20px',
+                    mx: { xs: 2, sm: 0 },
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    backdropFilter: 'blur(10px)',
+                    borderRadius: '16px',
+                    padding: '16px',
+                    transition: 'all 0.2s ease',
+                    border: '1px solid rgba(255,255,255,0.05)',
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                      borderColor: 'rgba(255,255,255,0.1)',
+                    },
                     cursor: 'pointer',
                   }}
                 >
                   <Typography
                     sx={{
                       fontSize: '14px',
-                      color: 'white',
+                      color: '#efefef',
+                      lineHeight: 1.6,
                       whiteSpace: 'pre-wrap',
+                      fontWeight: 400,
                     }}
                   >
                     {videoDescription}
@@ -752,7 +867,7 @@ const VideoPlayer = () => {
                 </Box>
 
                 {/* Comments Section */}
-                <Box sx={{ marginTop: '24px' }}>
+                <Box sx={{ marginTop: '24px', px: { xs: 2, sm: 0 } }}>
                   <Typography
                     variant="h3"
                     sx={{ fontSize: '20px', marginBottom: '16px' }}
@@ -774,7 +889,7 @@ const VideoPlayer = () => {
           </Grid>
 
           {/* Right Column: Recommendations */}
-          <Grid item xs={12} lg={3.5}>
+          <Grid item xs={12} lg={3.5} sx={{ px: { xs: 2, sm: 0 } }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Recommendation
                 currentVideoId={getCurrentVideoId()}
