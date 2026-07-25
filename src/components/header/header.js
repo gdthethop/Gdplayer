@@ -69,7 +69,7 @@ const Header = () => {
               verticalAlign: 'super',
             }}
           >
-            v1.3.2
+            v1.4.O
           </Typography>
         </Typography>
       </Box>
