@@ -79,12 +79,14 @@ const VideoPlayer = () => {
   const [recoveryProgress, setRecoveryProgress] = useState(0); // 0-100 % for recovery bar
 
   const PRE_BUFFER_SECONDS = 5; // seconds to pre-buffer before first play
-  const RECOVERY_BUFFER_SECONDS = 8; // seconds to buffer ahead before resuming after a stall
+  const RECOVERY_BUFFER_SECONDS = 4; // seconds ahead before resuming — 4s is enough for brief hiccups
+  const RECOVERY_COOLDOWN_MS = 5000; // min ms between recovery triggers — prevents double-recovery loops
 
   const preloadReadyRef = useRef(false); // tracks if pre-buffer threshold was reached
   const recoveryRef = useRef(false); // tracks if we are in mid-play recovery
   const stallWatchdogRef = useRef(null); // detects silent freezes the browser doesn't surface
   const playPromiseRef = useRef(null); // tracks the in-flight play() Promise to avoid AbortError
+  const lastRecoveryTimeRef = useRef(0); // timestamp of last recovery trigger — enforces cooldown
 
   // ── Safe play/pause helpers ──────────────────────────────────
   // The browser throws "play() interrupted by pause()" when pause() is called
@@ -218,16 +220,26 @@ const VideoPlayer = () => {
 
     if (isHlsStream && Hls.isSupported()) {
       const hls = new Hls({
-        // Aggressive pre-buffering — buffer far ahead so slow networks never stall
+        // ── Buffer sizing ──────────────────────────────────────────────────────
+        // Buffer aggressively ahead so brief network hiccups never stall playback
         maxBufferLength: 60, // aim for 60 s of buffer ahead
         maxMaxBufferLength: 120, // absolute cap at 120 s
         maxBufferSize: 60 * 1000 * 1000, // 60 MB max buffer size
-        startLevel: -1, // let ABR pick the best quality to start
-        abrEwmaDefaultEstimate: 1000000, // start assuming 1 Mbps; ABR adjusts fast
-        abrBandWidthFactor: 0.85, // be slightly conservative (don't jump to max quality)
-        abrBandWidthUpFactor: 0.7, // step up quality carefully
+        startFragPrefetch: true, // pre-fetch next segment while current plays
+
+        // ── Adaptive Bitrate (ABR) ─────────────────────────────────────────────
+        // Always start at the lowest quality (360p) so the first segment loads
+        // instantly. ABR ramps up as bandwidth is measured — this eliminates the
+        // most common cause of first-play stalls (cold start at 720p/1080p).
+        startLevel: 0, // start at 360p, ramp up
+        abrEwmaDefaultEstimate: 500000, // conservative 500 kbps cold-start estimate
+        abrBandWidthFactor: 0.75, // use 75% of measured bandwidth (safety margin)
+        abrBandWidthUpFactor: 0.5, // step up quality slowly — avoid overshooting
+
+        // ── Error recovery ────────────────────────────────────────────────────
         lowLatencyMode: false,
-        fragLoadingMaxRetry: 6, // retry segments up to 6x on network error
+        maxStarvationDelay: 4, // give up on a stalled segment after 4 s
+        fragLoadingMaxRetry: 6, // retry segments up to 6× on network error
         manifestLoadingMaxRetry: 3,
         levelLoadingMaxRetry: 3,
       });
@@ -380,17 +392,36 @@ const VideoPlayer = () => {
     const video = videoRef.current;
     if (!video) return;
 
-    // Called when the browser itself admits it's waiting on data
+    // Called when the browser itself admits it's waiting on data.
+    // A 5-second cooldown prevents double-recovery loops: e.g. when ABR switches
+    // quality the browser briefly fires 'waiting' even though buffering is fine.
     const onWaiting = () => {
-      // Only trigger recovery if video was actually playing (not during initial pre-buffer)
-      if (!isPreloading && !recoveryRef.current && !video.paused) {
+      const now = Date.now();
+      const sinceLast = now - lastRecoveryTimeRef.current;
+
+      // Only trigger recovery if:
+      //   • not in initial pre-buffer phase
+      //   • not already recovering
+      //   • video is actually playing (not user-paused)
+      //   • cooldown has expired
+      if (
+        !isPreloading &&
+        !recoveryRef.current &&
+        !video.paused &&
+        sinceLast >= RECOVERY_COOLDOWN_MS
+      ) {
+        lastRecoveryTimeRef.current = now;
         recoveryRef.current = true;
         setIsRecovering(true);
         setIsBuffering(true);
         setRecoveryProgress(0);
         // Pause so the browser focuses on downloading — await any pending play() first
         safePause(video);
-      } else if (!isPreloading && !recoveryRef.current) {
+      } else if (
+        !isPreloading &&
+        !recoveryRef.current &&
+        sinceLast >= RECOVERY_COOLDOWN_MS
+      ) {
         setIsBuffering(true);
       }
     };
@@ -409,9 +440,12 @@ const VideoPlayer = () => {
       }
     };
 
-    // ── Silent freeze watchdog ────────────────────────────────────
+    // ── Silent freeze watchdog ────────────────────────────────────────────────
     // Some browsers don't fire 'waiting' on every stall. We detect
     // a frozen playhead by checking if currentTime stops advancing.
+    // Grace period is 4 ticks (4 s) to avoid false positives during:
+    //   • HLS.js ABR quality switches (currentTime can pause 1-3 s)
+    //   • Brief network jitter that resolves on its own
     let lastTime = -1;
     let frozenTicks = 0;
 
@@ -423,8 +457,8 @@ const VideoPlayer = () => {
       }
       if (video.currentTime === lastTime) {
         frozenTicks++;
-        // If playhead hasn't moved for ~2 s, treat it as a stall
-        if (frozenTicks >= 2) {
+        // If playhead hasn't moved for ~4 s, treat it as a genuine stall
+        if (frozenTicks >= 4) {
           frozenTicks = 0;
           onWaiting();
         }
