@@ -62,6 +62,29 @@ export const loginUser = createAsyncThunk(
 );
 
 /**
+ * Async thunk to sign in / register with Google.
+ * Sends the Google ID token (credential) to the backend for verification.
+ * Returns user and token on success — same shape as loginUser.
+ */
+export const googleLogin = createAsyncThunk(
+  'auth/googleLogin',
+  async (credential, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_BACKEND_URL}/api/auth/google`,
+        { credential },
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+      return { user: response.data.user, token: response.data.token };
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || { message: 'Google login failed' }
+      );
+    }
+  }
+);
+
+/**
  * Async thunk to update user profile.
  * Sends a PUT request to the backend update-profile endpoint.
  * Returns updated user data on success.
@@ -171,6 +194,20 @@ const authSlice = createSlice({
       .addCase(updateUserProfileAsync.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload?.message || 'Profile update failed';
+      })
+      .addCase(googleLogin.pending, (state) => {
+        state.status = 'loading';
+      })
+      .addCase(googleLogin.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.token = action.payload.token;
+        state.user = action.payload.user;
+        localStorage.setItem('token', action.payload.token);
+        localStorage.setItem('user', JSON.stringify(action.payload.user));
+      })
+      .addCase(googleLogin.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload?.message || 'Google login failed';
       });
   },
 });

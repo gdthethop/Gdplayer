@@ -16,8 +16,13 @@ const initialState = {
   videoLikes: 0,
   videoDislikes: 0,
   videoUploader: null,
+  videoId: null,
+  hlsUrl: null, // master.m3u8 URL — null until transcoding is 'ready'
+  transcodingStatus: null, // 'pending' | 'processing' | 'ready' | 'failed'
   status: 'idle',
   error: null,
+  isUpdatingLikes: false,
+  isUpdatingDislikes: false,
 };
 
 const getBackendUrl = () =>
@@ -143,6 +148,9 @@ const videoSlice = createSlice({
       state.videoGenres = '';
       state.videoLikes = 0;
       state.videoDislikes = 0;
+      state.videoId = null;
+      state.hlsUrl = null;
+      state.transcodingStatus = null;
       state.status = 'idle';
       state.error = null;
     },
@@ -157,6 +165,17 @@ const videoSlice = createSlice({
         state.videoLikes = action.payload.likes;
         state.videoDislikes = action.payload.dislikes;
         state.videoUploader = action.payload.userId;
+        state.videoId = action.payload._id;
+        state.hlsUrl = action.payload.hlsUrl || null;
+        state.transcodingStatus = action.payload.transcodingStatus || null;
+        state.status = 'succeeded';
+      })
+      .addCase(fetchVideoDetails.pending, (state) => {
+        state.status = 'loading';
+      })
+      .addCase(fetchVideoDetails.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.error.message;
       })
       .addCase(fetchVideoDetailsByShortCode.fulfilled, (state, action) => {
         state.videoUrl = action.payload.link;
@@ -166,6 +185,17 @@ const videoSlice = createSlice({
         state.videoLikes = action.payload.likes;
         state.videoDislikes = action.payload.dislikes;
         state.videoUploader = action.payload.userId;
+        state.videoId = action.payload._id;
+        state.hlsUrl = action.payload.hlsUrl || null;
+        state.transcodingStatus = action.payload.transcodingStatus || null;
+        state.status = 'succeeded';
+      })
+      .addCase(fetchVideoDetailsByShortCode.pending, (state) => {
+        state.status = 'loading';
+      })
+      .addCase(fetchVideoDetailsByShortCode.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.error.message;
       })
       .addCase(updateVideoViewsById.fulfilled, (state, action) => {
         state.videoViews = action.payload.views;

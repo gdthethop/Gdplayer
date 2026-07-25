@@ -9,11 +9,13 @@ import {
   Link,
   CssBaseline,
   Paper,
+  Divider,
 } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
-import { signupUser } from '../../redux/authSlice';
+import { signupUser, googleLogin } from '../../redux/authSlice';
+import { GoogleLogin } from '@react-oauth/google';
 
 const theme = createTheme({
   palette: {
@@ -70,6 +72,25 @@ const Signup = () => {
 
   const handleClk = () => {
     navigate('/login');
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError('');
+    setLoading(true);
+    try {
+      await dispatch(googleLogin(credentialResponse.credential)).unwrap();
+      navigate('/home');
+    } catch (err) {
+      setError(
+        err?.error || err?.message || 'Google sign-in failed. Please try again.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    setError('Google sign-in was cancelled or failed.');
   };
 
   return (
@@ -293,8 +314,48 @@ const Signup = () => {
               </Button>
             </Box>
 
+            {/* OR Divider */}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                my: 2,
+                width: '100%',
+              }}
+            >
+              <Divider sx={{ flex: 1, borderColor: '#444' }} />
+              <Typography
+                variant="body2"
+                sx={{ px: 2, color: '#888', whiteSpace: 'nowrap' }}
+              >
+                or sign up with
+              </Typography>
+              <Divider sx={{ flex: 1, borderColor: '#444' }} />
+            </Box>
+
+            {/* Google Sign-Up Button */}
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                width: '100%',
+                mb: 2,
+              }}
+            >
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                theme="filled_black"
+                shape="rectangular"
+                size="large"
+                width="100%"
+                text="signup_with"
+                logo_alignment="center"
+              />
+            </Box>
+
             {/* Login Link */}
-            <Box sx={{ marginTop: 2, textAlign: 'center' }}>
+            <Box sx={{ marginTop: 1, textAlign: 'center' }}>
               <Typography variant="body2" sx={{ color: '#ffffff' }}>
                 Already have an account?{' '}
                 <Link

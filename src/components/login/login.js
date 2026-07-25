@@ -9,11 +9,13 @@ import {
   Link,
   CssBaseline,
   Paper,
+  Divider,
 } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
-import { loginUser } from '../../redux/authSlice';
+import { loginUser, googleLogin } from '../../redux/authSlice';
+import { GoogleLogin } from '@react-oauth/google';
 
 // Custom theme for Material-UI
 const theme = createTheme({
@@ -81,6 +83,23 @@ const Login = () => {
 
   const handleForgotClk = () => {
     navigate('/forgot');
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError('');
+    try {
+      await dispatch(googleLogin(credentialResponse.credential)).unwrap();
+      const from = location.state?.from?.pathname || '/home';
+      navigate(from, { replace: true });
+    } catch (err) {
+      setError(
+        err?.error || err?.message || 'Google sign-in failed. Please try again.'
+      );
+    }
+  };
+
+  const handleGoogleError = () => {
+    setError('Google sign-in was cancelled or failed. Please try again.');
   };
 
   return (
@@ -313,8 +332,52 @@ const Login = () => {
               </Box>
             </Box>
 
+            {/* OR Divider */}
+            {!requires2FA && (
+              <>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    my: 2,
+                    width: '100%',
+                  }}
+                >
+                  <Divider sx={{ flex: 1, borderColor: '#444' }} />
+                  <Typography
+                    variant="body2"
+                    sx={{ px: 2, color: '#888', whiteSpace: 'nowrap' }}
+                  >
+                    or continue with
+                  </Typography>
+                  <Divider sx={{ flex: 1, borderColor: '#444' }} />
+                </Box>
+
+                {/* Google Sign-In Button */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    width: '100%',
+                    mb: 1,
+                  }}
+                >
+                  <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={handleGoogleError}
+                    theme="filled_black"
+                    shape="rectangular"
+                    size="large"
+                    width="100%"
+                    text="signin_with"
+                    logo_alignment="center"
+                  />
+                </Box>
+              </>
+            )}
+
             {/* Registration Link */}
-            <Box sx={{ marginTop: 3, textAlign: 'center' }}>
+            <Box sx={{ marginTop: 2, textAlign: 'center' }}>
               <Typography variant="body2" sx={{ color: '#ffffff' }}>
                 New to Gd Player?{' '}
                 <Link

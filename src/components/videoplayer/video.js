@@ -57,13 +57,66 @@ const VideoPlayer = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
-  const [isMuted, setIsMuted] = useState(false); // Start unmuted
+  const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [isSeeking, setIsSeeking] = useState(false);
   const [isPip, setIsPip] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+
+  // ── HLS Quality State ──────────────────────────────────────
+  // hlsQualityLevels: array of { index, name, width, height, bitrate }
+  const [hlsQualityLevels, setHlsQualityLevels] = useState([]);
+  // currentHlsLevel: -1 = Auto, 0/1/2 = specific level index
+  const [currentHlsLevel, setCurrentHlsLevel] = useState(-1);
+
+  // ── Buffering State ──────────────────────────────────────────
+  const [isBuffering, setIsBuffering] = useState(false);
+  const [bufferProgress, setBufferProgress] = useState(0); // 0-100 %
+  const [isPreloading, setIsPreloading] = useState(false); // true during initial pre-buffer phase
+  const [isRecovering, setIsRecovering] = useState(false); // true when mid-play stall is being healed
+  const [recoveryProgress, setRecoveryProgress] = useState(0); // 0-100 % for recovery bar
+
+  const PRE_BUFFER_SECONDS = 5; // seconds to pre-buffer before first play
+  const RECOVERY_BUFFER_SECONDS = 8; // seconds to buffer ahead before resuming after a stall
+
+  const preloadReadyRef = useRef(false); // tracks if pre-buffer threshold was reached
+  const recoveryRef = useRef(false); // tracks if we are in mid-play recovery
+  const stallWatchdogRef = useRef(null); // detects silent freezes the browser doesn't surface
+  const playPromiseRef = useRef(null); // tracks the in-flight play() Promise to avoid AbortError
+
+  // ── Safe play/pause helpers ──────────────────────────────────
+  // The browser throws "play() interrupted by pause()" when pause() is called
+  // before a pending play() Promise resolves. We track the promise and always
+  // await it before pausing.
+  const safePlay = (video) => {
+    if (!video) return;
+    const promise = video.play();
+    if (promise !== undefined) {
+      playPromiseRef.current = promise;
+      promise
+        .then(() => {
+          playPromiseRef.current = null;
+        })
+        .catch((err) => {
+          playPromiseRef.current = null;
+          // AbortError = play was interrupted by pause — silent, expected
+          if (err.name !== 'AbortError') {
+            console.warn('[Player] play() failed:', err.message);
+          }
+        });
+    }
+  };
+
+  const safePause = async (video) => {
+    if (!video) return;
+    // Wait for any in-flight play() to settle before pausing
+    if (playPromiseRef.current) {
+      await playPromiseRef.current.catch(() => {});
+    }
+    video.pause();
+  };
 
   // Extract videoId from URL query params if available
   const getQueryParam = (param) =>
@@ -78,6 +131,8 @@ const VideoPlayer = () => {
     videoLikes,
     videoDislikes,
     videoId,
+    hlsUrl,
+    transcodingStatus,
     status,
     error,
     isUpdatingLikes,
@@ -132,14 +187,275 @@ const VideoPlayer = () => {
 
   const processedVideoUrl = getDirectVideoUrl(videoUrl);
 
+  // ── HLS.js Setup ─────────────────────────────────────────────
+  // Priority: hlsUrl (our transcoded m3u8) > raw MP4 URL.
+  // hlsUrl enables true adaptive bitrate switching — quality auto-adjusts to network.
+  const activeStreamUrl =
+    hlsUrl && transcodingStatus === 'ready' ? hlsUrl : processedVideoUrl;
+
+  // Handler to switch HLS quality level (called from CustomControls)
+  const handleQualityChange = (levelIndex) => {
+    if (hlsRef.current) {
+      hlsRef.current.currentLevel = levelIndex; // -1 = Auto
+      setCurrentHlsLevel(levelIndex);
+    }
+  };
+
+  useEffect(() => {
+    if (!activeStreamUrl || !videoRef.current) return;
+
+    // Clean up any previous HLS instance
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
+    }
+
+    // Reset quality state for new video
+    setHlsQualityLevels([]);
+    setCurrentHlsLevel(-1);
+
+    const isHlsStream = activeStreamUrl.includes('.m3u8');
+
+    if (isHlsStream && Hls.isSupported()) {
+      const hls = new Hls({
+        // Aggressive pre-buffering — buffer far ahead so slow networks never stall
+        maxBufferLength: 60, // aim for 60 s of buffer ahead
+        maxMaxBufferLength: 120, // absolute cap at 120 s
+        maxBufferSize: 60 * 1000 * 1000, // 60 MB max buffer size
+        startLevel: -1, // let ABR pick the best quality to start
+        abrEwmaDefaultEstimate: 1000000, // start assuming 1 Mbps; ABR adjusts fast
+        abrBandWidthFactor: 0.85, // be slightly conservative (don't jump to max quality)
+        abrBandWidthUpFactor: 0.7, // step up quality carefully
+        lowLatencyMode: false,
+        fragLoadingMaxRetry: 6, // retry segments up to 6x on network error
+        manifestLoadingMaxRetry: 3,
+        levelLoadingMaxRetry: 3,
+      });
+
+      hls.loadSource(activeStreamUrl);
+      hls.attachMedia(videoRef.current);
+      hlsRef.current = hls;
+
+      // When manifest is parsed, HLS.js knows all quality levels
+      hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+        // Build quality level list for the UI
+        const levels = data.levels.map((l, i) => ({
+          index: i,
+          name: l.height ? `${l.height}p` : `Level ${i}`,
+          width: l.width,
+          height: l.height,
+          bitrate: l.bitrate,
+        }));
+        setHlsQualityLevels(levels);
+        setCurrentHlsLevel(-1); // Auto by default
+
+        // Start pre-buffering phase — HLS.js downloads segments; we wait before playing
+        preloadReadyRef.current = false;
+        setIsPreloading(true);
+        setIsBuffering(false);
+
+        // ── Safety valve: if the buffer gate hasn't fired in 12 s, force-start ──
+        // Handles edge cases: CORS issues blocking buffered ranges, very slow networks, etc.
+        const safetyTimer = setTimeout(() => {
+          if (!preloadReadyRef.current && videoRef.current) {
+            console.warn(
+              '[HLS] Pre-buffer safety timeout — force starting playback'
+            );
+            preloadReadyRef.current = true;
+            setIsPreloading(false);
+            safePlay(videoRef.current);
+          }
+        }, 12000);
+
+        // Cancel the safety timer if the component unmounts or URL changes
+        hls.once(Hls.Events.DESTROYING, () => clearTimeout(safetyTimer));
+      });
+
+      // Keep UI in sync when ABR auto-switches quality
+      hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
+        // Only update if we're in Auto mode (don't override manual selection)
+        setCurrentHlsLevel((prev) => (prev === -1 ? -1 : data.level));
+      });
+
+      // Handle HLS errors gracefully — attempt recovery before giving up
+      hls.on(Hls.Events.ERROR, (event, data) => {
+        if (data.fatal) {
+          if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+            console.warn('[HLS] Network error — attempting recovery...');
+            hls.startLoad(); // retry the load
+          } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+            console.warn('[HLS] Media error — attempting recovery...');
+            hls.recoverMediaError();
+          } else {
+            console.error('[HLS] Fatal unrecoverable error:', data);
+            hls.destroy();
+          }
+        }
+      });
+    } else if (
+      isHlsStream &&
+      videoRef.current.canPlayType('application/vnd.apple.mpegurl')
+    ) {
+      // Native HLS (Safari) — no quality switching, but it still works
+      videoRef.current.src = activeStreamUrl;
+    }
+    // MP4 / other non-HLS formats are handled by the <source> tag in JSX
+
+    return () => {
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+    };
+  }, [activeStreamUrl]);
+
+  // ── Buffer progress tracker + pre-buffer gate + recovery gate ──
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const updateBufferProgress = () => {
+      if (!video.duration || video.buffered.length === 0) return;
+
+      // Find the furthest buffered end that is reachable from currentTime
+      let bufferedEnd = 0;
+      for (let i = 0; i < video.buffered.length; i++) {
+        if (video.buffered.start(i) <= video.currentTime + 1) {
+          bufferedEnd = Math.max(bufferedEnd, video.buffered.end(i));
+        }
+      }
+      const bufferedAhead = bufferedEnd - video.currentTime;
+
+      // Overall buffer percentage for the progress bar
+      const pct = Math.min((bufferedEnd / video.duration) * 100, 100);
+      setBufferProgress(pct);
+
+      // ── Gate 1: Initial pre-buffer before first play ──
+      if (isPreloading && !preloadReadyRef.current) {
+        if (
+          bufferedAhead >= PRE_BUFFER_SECONDS ||
+          bufferedEnd >= video.duration * 0.98
+        ) {
+          preloadReadyRef.current = true;
+          setIsPreloading(false);
+          safePlay(video);
+        }
+        return; // don't run recovery gate while still in initial pre-buffer
+      }
+
+      // ── Gate 2: Mid-play stall recovery ──
+      if (recoveryRef.current) {
+        // Show how far along re-buffering is (0 → RECOVERY_BUFFER_SECONDS)
+        const recPct = Math.min(
+          (bufferedAhead / RECOVERY_BUFFER_SECONDS) * 100,
+          100
+        );
+        setRecoveryProgress(recPct);
+
+        if (
+          bufferedAhead >= RECOVERY_BUFFER_SECONDS ||
+          bufferedEnd >= video.duration * 0.98
+        ) {
+          // Enough buffer built up — resume seamlessly
+          recoveryRef.current = false;
+          setIsRecovering(false);
+          setIsBuffering(false);
+          setRecoveryProgress(0);
+          safePlay(video);
+        }
+      }
+    };
+
+    video.addEventListener('progress', updateBufferProgress);
+    video.addEventListener('timeupdate', updateBufferProgress);
+
+    return () => {
+      video.removeEventListener('progress', updateBufferProgress);
+      video.removeEventListener('timeupdate', updateBufferProgress);
+    };
+  }, [isPreloading, processedVideoUrl]);
+
+  // ── Stall detection + mid-play recovery trigger ───────────────
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    // Called when the browser itself admits it's waiting on data
+    const onWaiting = () => {
+      // Only trigger recovery if video was actually playing (not during initial pre-buffer)
+      if (!isPreloading && !recoveryRef.current && !video.paused) {
+        recoveryRef.current = true;
+        setIsRecovering(true);
+        setIsBuffering(true);
+        setRecoveryProgress(0);
+        // Pause so the browser focuses on downloading — await any pending play() first
+        safePause(video);
+      } else if (!isPreloading && !recoveryRef.current) {
+        setIsBuffering(true);
+      }
+    };
+
+    const onPlaying = () => {
+      if (!recoveryRef.current) {
+        setIsBuffering(false);
+      }
+    };
+
+    const onCanPlay = () => {
+      // Only clear buffering if we are NOT in active recovery
+      // (recovery is cleared by the buffer tracker once the threshold is met)
+      if (!recoveryRef.current) {
+        setIsBuffering(false);
+      }
+    };
+
+    // ── Silent freeze watchdog ────────────────────────────────────
+    // Some browsers don't fire 'waiting' on every stall. We detect
+    // a frozen playhead by checking if currentTime stops advancing.
+    let lastTime = -1;
+    let frozenTicks = 0;
+
+    const watchdog = setInterval(() => {
+      if (video.paused || video.ended || isPreloading || recoveryRef.current) {
+        lastTime = -1;
+        frozenTicks = 0;
+        return;
+      }
+      if (video.currentTime === lastTime) {
+        frozenTicks++;
+        // If playhead hasn't moved for ~2 s, treat it as a stall
+        if (frozenTicks >= 2) {
+          frozenTicks = 0;
+          onWaiting();
+        }
+      } else {
+        frozenTicks = 0;
+      }
+      lastTime = video.currentTime;
+    }, 1000);
+
+    stallWatchdogRef.current = watchdog;
+
+    video.addEventListener('waiting', onWaiting);
+    video.addEventListener('playing', onPlaying);
+    video.addEventListener('canplay', onCanPlay);
+
+    return () => {
+      clearInterval(watchdog);
+      video.removeEventListener('waiting', onWaiting);
+      video.removeEventListener('playing', onPlaying);
+      video.removeEventListener('canplay', onCanPlay);
+    };
+  }, [isPreloading, processedVideoUrl]);
+
   // --- Handlers ---
   const togglePlay = () => {
     if (videoRef.current) {
       if (videoRef.current.paused) {
-        videoRef.current.play();
+        safePlay(videoRef.current);
         setIsPlaying(true);
       } else {
-        videoRef.current.pause();
+        safePause(videoRef.current);
         setIsPlaying(false);
       }
     }
@@ -157,6 +473,10 @@ const VideoPlayer = () => {
       setDuration(videoRef.current.duration);
       setVolume(videoRef.current.volume);
       setIsMuted(videoRef.current.muted);
+      // NOTE: We intentionally do NOT pause MP4 here.
+      // Calling pause() early stops the browser download pipeline entirely —
+      // which is why "0% buffered" happened. Let the browser download freely.
+      // The HLS pre-buffer gate is handled separately via Hls.Events.MANIFEST_PARSED.
     }
   };
 
@@ -260,11 +580,20 @@ const VideoPlayer = () => {
     setIsPlaying(false);
     setCurrentTime(0);
     setDuration(0);
-    setShowControls(false); // Hide controls initially for new video
-
-    if (videoRef.current) {
-      videoRef.current.load(); // Explicitly load the new source
+    setShowControls(false);
+    setIsBuffering(false);
+    setIsRecovering(false);
+    setBufferProgress(0);
+    setRecoveryProgress(0);
+    setIsPreloading(false);
+    preloadReadyRef.current = false;
+    recoveryRef.current = false;
+    if (stallWatchdogRef.current) {
+      clearInterval(stallWatchdogRef.current);
+      stallWatchdogRef.current = null;
     }
+    // Note: HLS streams trigger isPreloading via Hls.Events.MANIFEST_PARSED.
+    // MP4 streams use autoPlay directly — no manual load/pause here.
   }, [processedVideoUrl]); // Trigger whenever the URL changes
 
   useEffect(() => {
@@ -560,27 +889,128 @@ const VideoPlayer = () => {
                 >
                   <>
                     <video
-                      key={processedVideoUrl}
+                      key={activeStreamUrl}
                       ref={videoRef}
                       onClick={togglePlay}
                       onTimeUpdate={handleTimeUpdate}
                       onLoadedMetadata={handleLoadedMetadata}
                       onEnded={() => setIsPlaying(false)}
-                      // Listen for PiP events to sync state
                       onEnterPictureInPicture={() => setIsPip(true)}
                       onLeavePictureInPicture={() => setIsPip(false)}
-                      autoPlay
+                      // autoPlay for MP4: browser downloads + plays immediately.
+                      // HLS streams are controlled by HLS.js — it starts play
+                      // only after the pre-buffer gate in MANIFEST_PARSED fires.
+                      autoPlay={!activeStreamUrl.includes('.m3u8')}
+                      preload="auto"
                       style={{
                         width: '100%',
                         height: '100%',
                         objectFit: 'contain',
                       }}
                     >
-                      {!processedVideoUrl.includes('.m3u8') && (
-                        <source src={processedVideoUrl} type="video/mp4" />
+                      {/* Only inject <source> for non-HLS (MP4). HLS.js handles m3u8 via JS. */}
+                      {!activeStreamUrl.includes('.m3u8') && (
+                        <source src={activeStreamUrl} type="video/mp4" />
                       )}
                       Your browser does not support the video tag.
                     </video>
+
+                    {/* ── Buffering / Pre-load Overlay ── */}
+                    {(isBuffering || isPreloading || isRecovering) && (
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: isRecovering
+                            ? 'rgba(0,0,0,0.7)'
+                            : 'rgba(0,0,0,0.55)',
+                          backdropFilter: 'blur(4px)',
+                          zIndex: 20,
+                          gap: 2,
+                          pointerEvents: 'none',
+                          transition: 'background-color 0.3s ease',
+                        }}
+                      >
+                        {/* Spinner — red during initial load, amber during recovery */}
+                        <Box
+                          sx={{
+                            width: { xs: 56, sm: 72 },
+                            height: { xs: 56, sm: 72 },
+                            borderRadius: '50%',
+                            border: '4px solid rgba(255,255,255,0.12)',
+                            borderTopColor: isRecovering
+                              ? '#f5a623'
+                              : '#ff0000',
+                            animation: 'gdSpin 0.85s linear infinite',
+                            '@keyframes gdSpin': {
+                              '0%': { transform: 'rotate(0deg)' },
+                              '100%': { transform: 'rotate(360deg)' },
+                            },
+                          }}
+                        />
+
+                        {/* Main label */}
+                        <Typography
+                          sx={{
+                            color: 'rgba(255,255,255,0.9)',
+                            fontSize: { xs: '13px', sm: '15px' },
+                            fontWeight: 700,
+                            letterSpacing: '0.4px',
+                          }}
+                        >
+                          {isRecovering
+                            ? 'Re-buffering — will resume automatically'
+                            : isPreloading
+                              ? 'Buffering video…'
+                              : 'Loading…'}
+                        </Typography>
+
+                        {/* Progress bar */}
+                        <Box
+                          sx={{
+                            width: { xs: '65%', sm: '42%' },
+                            height: '5px',
+                            backgroundColor: 'rgba(255,255,255,0.12)',
+                            borderRadius: '5px',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              height: '100%',
+                              width: isRecovering
+                                ? `${recoveryProgress}%`
+                                : `${bufferProgress}%`,
+                              background: isRecovering
+                                ? 'linear-gradient(90deg, #f5a623, #ffcc70)'
+                                : 'linear-gradient(90deg, #ff0000, #ff6b6b)',
+                              borderRadius: '5px',
+                              transition: 'width 0.35s ease',
+                            }}
+                          />
+                        </Box>
+
+                        {/* Sub-label */}
+                        <Typography
+                          sx={{
+                            color: 'rgba(255,255,255,0.45)',
+                            fontSize: '12px',
+                            fontWeight: 500,
+                          }}
+                        >
+                          {isRecovering
+                            ? `${Math.round(recoveryProgress)}% ready — paused to prevent stuttering`
+                            : `${Math.round(bufferProgress)}% buffered`}
+                        </Typography>
+                      </Box>
+                    )}
 
                     <CustomControls
                       onPlayPause={togglePlay}
@@ -597,13 +1027,17 @@ const VideoPlayer = () => {
                       onFullscreen={toggleFullscreen}
                       isFullscreen={isFullscreen}
                       showControls={showControls}
-                      // New Props
                       onPip={togglePip}
                       isPip={isPip}
                       playbackRate={playbackRate}
                       onPlaybackRateChange={handlePlaybackRateChange}
                       onSkipBackward={skipBackward}
                       onSkipForward={skipForward}
+                      bufferProgress={bufferProgress}
+                      // Quality switching
+                      hlsQualityLevels={hlsQualityLevels}
+                      currentHlsLevel={currentHlsLevel}
+                      onQualityChange={handleQualityChange}
                     />
                   </>
                 </Box>

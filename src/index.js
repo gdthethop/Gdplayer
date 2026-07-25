@@ -16,6 +16,7 @@ import NotFound from './components/notfound/NotFound';
 import ErrorBoundary from './components/boundarys/ErrorBoundary';
 import { Provider } from 'react-redux';
 import store from './redux/store';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import Home from './components/home/home';
 import UploadVideo from './components/UploadVideo';
 import PrivateRoute from './components/PrivateRoute';
@@ -29,73 +30,77 @@ import WatchLater from './components/watch_later/WatchLater';
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <Provider store={store}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <ErrorBoundary>
-          <HashRouter>
-            <Routes>
-              <Route path="/" element={<Navigate to="/home" replace />} />
-              <Route path="/home" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/forgot" element={<ForgotPassword />} />
-              <Route
-                path="/reset-password/:token"
-                element={<ResetPassword />}
-              />
-              <Route path="/video" element={<VideoPlayer />} />
-              <Route path="/video/:shortCode" element={<VideoPlayer />} />
-              <Route
-                path="/gd"
-                element={
-                  <PrivateRoute>
-                    <UploadVideo />
-                  </PrivateRoute>
-                }
-              />
-              <Route path="/search" element={<SearchPage />} />
-              <Route
-                path="/profile"
-                element={
-                  <PrivateRoute>
-                    <Profile />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/history"
-                element={
-                  <PrivateRoute>
-                    <History />
-                  </PrivateRoute>
-                }
-              />
+    <GoogleOAuthProvider
+      clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID || ''}
+    >
+      <Provider store={store}>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <ErrorBoundary>
+            <HashRouter>
+              <Routes>
+                <Route path="/" element={<Navigate to="/home" replace />} />
+                <Route path="/home" element={<Home />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/forgot" element={<ForgotPassword />} />
+                <Route
+                  path="/reset-password/:token"
+                  element={<ResetPassword />}
+                />
+                <Route path="/video" element={<VideoPlayer />} />
+                <Route path="/video/:shortCode" element={<VideoPlayer />} />
+                <Route
+                  path="/gd"
+                  element={
+                    <PrivateRoute>
+                      <UploadVideo />
+                    </PrivateRoute>
+                  }
+                />
+                <Route path="/search" element={<SearchPage />} />
+                <Route
+                  path="/profile"
+                  element={
+                    <PrivateRoute>
+                      <Profile />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/history"
+                  element={
+                    <PrivateRoute>
+                      <History />
+                    </PrivateRoute>
+                  }
+                />
 
-              {/* ... */}
+                {/* ... */}
 
-              <Route
-                path="/studio"
-                element={
-                  <PrivateRoute>
-                    <CreatorStudio />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/watch-later"
-                element={
-                  <PrivateRoute>
-                    <WatchLater />
-                  </PrivateRoute>
-                }
-              />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </HashRouter>
-        </ErrorBoundary>
-      </ThemeProvider>
-    </Provider>
+                <Route
+                  path="/studio"
+                  element={
+                    <PrivateRoute>
+                      <CreatorStudio />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/watch-later"
+                  element={
+                    <PrivateRoute>
+                      <WatchLater />
+                    </PrivateRoute>
+                  }
+                />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </HashRouter>
+          </ErrorBoundary>
+        </ThemeProvider>
+      </Provider>
+    </GoogleOAuthProvider>
   </React.StrictMode>
 );
 

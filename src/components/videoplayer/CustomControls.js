@@ -55,10 +55,14 @@ const CustomControls = ({
   onPlaybackRateChange,
   onSkipForward,
   onSkipBackward,
+  bufferProgress = 0,
+  hlsQualityLevels = [],
+  currentHlsLevel = -1,
+  onQualityChange,
 }) => {
   // Settings Menu State
   const [anchorEl, setAnchorEl] = useState(null);
-  const [menuView, setMenuView] = useState('main'); // 'main', 'speed'
+  const [menuView, setMenuView] = useState('main'); // 'main', 'speed', 'quality'
 
   const handleSettingsClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -88,12 +92,24 @@ const CustomControls = ({
     handleClose();
   };
 
+  const handleQualitySelect = (levelIndex) => {
+    if (onQualityChange) onQualityChange(levelIndex);
+    handleClose();
+  };
+
+  // Derive a human-readable label for the currently active quality
+  const currentQualityLabel = () => {
+    if (currentHlsLevel === -1 || hlsQualityLevels.length === 0) return 'Auto';
+    const level = hlsQualityLevels.find((l) => l.index === currentHlsLevel);
+    return level ? level.name : 'Auto';
+  };
+
   const renderSettingsMenu = () => {
     const speeds = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
     if (menuView === 'main') {
       return (
-        <Box sx={{ width: 200 }}>
+        <Box sx={{ width: 220 }}>
           <MenuItem onClick={() => setMenuView('speed')}>
             <ListItemIcon>
               <SpeedIcon fontSize="small" />
@@ -106,10 +122,41 @@ const CustomControls = ({
               {'>'}
             </Typography>
           </MenuItem>
-          {/* Quality placeholder */}
-          <MenuItem disabled>
-            <ListItemText primary="Quality" secondary="Auto (1080p)" />
-          </MenuItem>
+
+          {/* Quality — only show when HLS quality levels are available */}
+          {hlsQualityLevels.length > 0 ? (
+            <MenuItem onClick={() => setMenuView('quality')}>
+              <ListItemIcon>
+                <Box
+                  sx={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: '4px',
+                    background: 'linear-gradient(135deg, #ff0000, #ff6b6b)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '9px',
+                    fontWeight: 700,
+                    color: '#fff',
+                  }}
+                >
+                  HD
+                </Box>
+              </ListItemIcon>
+              <ListItemText
+                primary="Quality"
+                secondary={currentQualityLabel()}
+              />
+              <Typography variant="body2" color="text.secondary">
+                {'>'}
+              </Typography>
+            </MenuItem>
+          ) : (
+            <MenuItem disabled>
+              <ListItemText primary="Quality" secondary="Auto" />
+            </MenuItem>
+          )}
         </Box>
       );
     }
@@ -129,6 +176,54 @@ const CustomControls = ({
                 {playbackRate === rate && <CheckIcon fontSize="small" />}
               </ListItemIcon>
               <ListItemText primary={rate === 1 ? 'Normal' : `${rate}x`} />
+            </MenuItem>
+          ))}
+        </Box>
+      );
+    }
+
+    if (menuView === 'quality') {
+      return (
+        <Box sx={{ width: 200, maxHeight: 300, overflowY: 'auto' }}>
+          <MenuItem onClick={() => setMenuView('main')}>
+            <ListItemIcon>
+              <ArrowBackIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary="Quality" />
+          </MenuItem>
+
+          {/* Auto option */}
+          <MenuItem onClick={() => handleQualitySelect(-1)}>
+            <ListItemIcon>
+              {currentHlsLevel === -1 && <CheckIcon fontSize="small" />}
+            </ListItemIcon>
+            <ListItemText
+              primary="Auto"
+              secondary="Adapts to your network"
+              secondaryTypographyProps={{ style: { fontSize: '11px' } }}
+            />
+          </MenuItem>
+
+          {/* Specific renditions — highest quality first */}
+          {[...hlsQualityLevels].reverse().map((level) => (
+            <MenuItem
+              key={level.index}
+              onClick={() => handleQualitySelect(level.index)}
+            >
+              <ListItemIcon>
+                {currentHlsLevel === level.index && (
+                  <CheckIcon fontSize="small" />
+                )}
+              </ListItemIcon>
+              <ListItemText
+                primary={level.name}
+                secondary={
+                  level.bitrate
+                    ? `${Math.round(level.bitrate / 1000)} kbps`
+                    : undefined
+                }
+                secondaryTypographyProps={{ style: { fontSize: '11px' } }}
+              />
             </MenuItem>
           ))}
         </Box>
@@ -350,6 +445,31 @@ const CustomControls = ({
           alignItems: 'flex-end',
         }}
       >
+        {/* Buffer track (gray bar showing buffered amount) */}
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: '10px',
+            left: '10px',
+            right: '10px',
+            height: '3px',
+            backgroundColor: 'transparent',
+            zIndex: 1,
+            pointerEvents: 'none',
+          }}
+        >
+          <Box
+            sx={{
+              height: '100%',
+              width: `${bufferProgress}%`,
+              backgroundColor: 'rgba(255,255,255,0.35)',
+              borderRadius: '3px',
+              transition: 'width 0.3s ease',
+            }}
+          />
+        </Box>
+
+        {/* Playback seek slider (red, on top of buffer bar) */}
         <Slider
           size="small"
           value={currentTime}
@@ -362,6 +482,7 @@ const CustomControls = ({
             color: '#ff0000',
             height: 3,
             padding: '10px 0',
+            zIndex: 2,
             '& .MuiSlider-thumb': {
               width: 14,
               height: 14,
@@ -378,7 +499,7 @@ const CustomControls = ({
               },
             },
             '& .MuiSlider-rail': {
-              opacity: 0.2,
+              opacity: 0.1,
               color: '#fff',
             },
             '& .MuiSlider-track': {
