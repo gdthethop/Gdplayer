@@ -4,18 +4,13 @@ import Header from '../header/header';
 import HeroSection from './HeroSection';
 import { Box, Typography, Grid } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import {
-  fetchVideoDetails,
-  fetchVideoDetailsByShortCode,
-} from '../../redux/videoSlice';
+import { prefetchHandlers, toPreview } from '../../utils/videoPrefetch';
 
 function Home() {
   const [videos, setVideos] = useState([]);
   const [latestVideo, setLatestVideo] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const dispatch = useDispatch();
 
   const fetchData = async () => {
     setLoading(true);
@@ -47,13 +42,12 @@ function Home() {
   }, []);
 
   const handleVideoClick = (video) => {
-    if (video.shortCode) {
-      dispatch(fetchVideoDetailsByShortCode(video.shortCode));
-      navigate(`/video/${encodeURIComponent(video.shortCode)}`);
-    } else {
-      dispatch(fetchVideoDetails(video._id));
-      navigate(`/video/${encodeURIComponent(video._id)}`);
-    }
+    // The watch page fetches details itself; we pass a preview so it can
+    // attach the stream immediately instead of waiting for that request.
+    const id = video.shortCode || video._id;
+    navigate(`/video/${encodeURIComponent(id)}`, {
+      state: { preview: toPreview(video) },
+    });
   };
 
   const getThumbnailUrl = (link) => {
@@ -85,6 +79,8 @@ function Home() {
               <Grid item key={video._id} xs={12} sm={6} md={4} lg={3}>
                 <Box
                   onClick={() => handleVideoClick(video)}
+                  {...prefetchHandlers(video)}
+                  tabIndex={0}
                   sx={{
                     cursor: 'pointer',
                     transition: 'transform 0.2s',

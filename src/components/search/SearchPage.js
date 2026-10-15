@@ -20,6 +20,7 @@ import {
   fetchVideoDetailsByShortCode,
 } from '../../redux/videoSlice';
 import Header from '../header/header';
+import { prefetchHandlers, toPreview } from '../../utils/videoPrefetch';
 import FilterListIcon from '@mui/icons-material/FilterList';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api/videos`;
@@ -218,13 +219,21 @@ const SearchPage = () => {
             {videos.map((video) => (
               <Grid item key={video._id} xs={12} sm={6} md={4} lg={3}>
                 <Box
+                  {...prefetchHandlers(video)}
                   onClick={() => {
                     if (video.shortCode) {
                       dispatch(fetchVideoDetailsByShortCode(video.shortCode));
-                      navigate(`/video/${encodeURIComponent(video.shortCode)}`);
+                      navigate(
+                        `/video/${encodeURIComponent(video.shortCode)}`,
+                        {
+                          state: { preview: toPreview(video) },
+                        }
+                      );
                     } else {
                       dispatch(fetchVideoDetails(video._id));
-                      navigate(`/video/${encodeURIComponent(video._id)}`);
+                      navigate(`/video/${encodeURIComponent(video._id)}`, {
+                        state: { preview: toPreview(video) },
+                      });
                     }
                   }}
                   sx={{

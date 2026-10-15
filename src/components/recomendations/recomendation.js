@@ -1,22 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
-import { useDispatch } from 'react-redux';
-import {
-  fetchVideoDetails,
-  fetchVideoDetailsByShortCode,
-} from '../../redux/videoSlice';
 import { useNavigate } from 'react-router-dom';
 import Skeleton from '@mui/material/Skeleton';
+import {
+  prefetchHandlers,
+  prefetchVideo,
+  toPreview,
+} from '../../utils/videoPrefetch';
 
 const API_URL =
   process.env.REACT_APP_API_URL ||
   `${process.env.REACT_APP_BACKEND_URL}/api/videos`;
 
+const UP_NEXT_PREFETCH_DELAY_MS = 8000; // after the current video has started
+
 const Recommendation = ({ currentVideoId, currentVideoShortCode }) => {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const dispatch = useDispatch();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -50,6 +51,17 @@ const Recommendation = ({ currentVideoId, currentVideoShortCode }) => {
 
     fetchData();
   }, [currentVideoId]);
+
+  // Warm the first "up next" video once the current one has had time to start
+  useEffect(() => {
+    if (!videos.length) return undefined;
+    const t = setTimeout(
+      () => prefetchVideo(videos[0]),
+      UP_NEXT_PREFETCH_DELAY_MS
+    );
+    return () => clearTimeout(t);
+  }, [videos]);
+
   return (
     <Box sx={{ padding: { xs: '20px 0', md: '0 0 0 20px' } }}>
       <Typography
@@ -100,19 +112,13 @@ const Recommendation = ({ currentVideoId, currentVideoShortCode }) => {
               <Box
                 key={video._id}
                 component="a"
+                {...prefetchHandlers(video)}
                 onClick={(e) => {
                   e.preventDefault();
-                  if (video.shortCode) {
-                    dispatch(fetchVideoDetailsByShortCode(video.shortCode));
-                    navigate(`/video/${encodeURIComponent(video.shortCode)}`);
-                  } else {
-                    dispatch(fetchVideoDetails(video._id));
-                    navigate(
-                      `/video?videoId=${encodeURIComponent(video._id)}&title=${encodeURIComponent(
-                        video.title
-                      )}&description=${encodeURIComponent(video.description)}`
-                    );
-                  }
+                  const id = video.shortCode || video._id;
+                  navigate(`/video/${encodeURIComponent(id)}`, {
+                    state: { preview: toPreview(video) },
+                  });
                 }}
                 sx={{
                   display: 'flex',

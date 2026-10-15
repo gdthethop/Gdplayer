@@ -168,6 +168,7 @@ const videoSlice = createSlice({
         state.videoId = action.payload._id;
         state.hlsUrl = action.payload.hlsUrl || null;
         state.transcodingStatus = action.payload.transcodingStatus || null;
+        state.videoThumbnail = action.payload.thumbnail || '';
         state.status = 'succeeded';
       })
       .addCase(fetchVideoDetails.pending, (state) => {
@@ -188,6 +189,7 @@ const videoSlice = createSlice({
         state.videoId = action.payload._id;
         state.hlsUrl = action.payload.hlsUrl || null;
         state.transcodingStatus = action.payload.transcodingStatus || null;
+        state.videoThumbnail = action.payload.thumbnail || '';
         state.status = 'succeeded';
       })
       .addCase(fetchVideoDetailsByShortCode.pending, (state) => {

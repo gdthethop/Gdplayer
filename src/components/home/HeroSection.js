@@ -1,14 +1,23 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, Typography, Button, IconButton } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
 import { useNavigate } from 'react-router-dom';
+import { prefetchVideo, toPreview } from '../../utils/videoPrefetch';
 
 const HeroSection = ({ video }) => {
   const navigate = useNavigate();
   const [isMuted, setIsMuted] = useState(true);
+
+  // The featured video is the most likely click — warm its first segment
+  // shortly after the page settles so "Play" starts instantly.
+  useEffect(() => {
+    if (!video) return undefined;
+    const t = setTimeout(() => prefetchVideo(video), 800);
+    return () => clearTimeout(t);
+  }, [video]);
 
   if (!video) {
     return (
@@ -35,11 +44,10 @@ const HeroSection = ({ video }) => {
         'https://assets.nflxext.com/ffe/siteui/vlv3/c38a2d52-138e-48a3-ab68-36787ece46b3/eeb03fc9-99bf-4188-84aa-23605eb75bc7/IN-en-20240101-popsignuptwoweeks-perspective_alpha_website_large.jpg';
 
   const handlePlay = () => {
-    if (video.shortCode) {
-      navigate(`/video/${encodeURIComponent(video.shortCode)}`);
-    } else {
-      navigate(`/video/${encodeURIComponent(video._id)}`);
-    }
+    const id = video.shortCode || video._id;
+    navigate(`/video/${encodeURIComponent(id)}`, {
+      state: { preview: toPreview(video) },
+    });
   };
 
   const getTitleFontSize = (title) => {

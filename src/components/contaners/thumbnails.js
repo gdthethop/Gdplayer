@@ -9,6 +9,7 @@ import {
 } from '../../redux/videoSlice';
 import { useNavigate } from 'react-router-dom'; // useNavigate for React Router v6
 import Skeleton from '@mui/material/Skeleton';
+import { prefetchHandlers, toPreview } from '../../utils/videoPrefetch';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api/videos`;
 
@@ -172,14 +173,19 @@ const VideoCarousel = ({ videos, trackRef, dispatch, navigate }) => {
               key={video._id}
               className="thumbnail-wrapper"
               component="a"
+              {...prefetchHandlers(video)}
               onClick={(e) => {
                 e.preventDefault();
                 if (video.shortCode) {
                   dispatch(fetchVideoDetailsByShortCode(video.shortCode));
-                  navigate(`/video/${encodeURIComponent(video.shortCode)}`);
+                  navigate(`/video/${encodeURIComponent(video.shortCode)}`, {
+                    state: { preview: toPreview(video) },
+                  });
                 } else {
                   dispatch(fetchVideoDetails(video._id));
-                  navigate(`/video/${encodeURIComponent(video._id)}`);
+                  navigate(`/video/${encodeURIComponent(video._id)}`, {
+                    state: { preview: toPreview(video) },
+                  });
                 }
               }}
               sx={{
